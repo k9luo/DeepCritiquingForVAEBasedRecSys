@@ -208,14 +208,14 @@ class CDE_VAE(object):
 
 
 def cde_vae(matrix_train, embeded_matrix=np.empty((0)),
-           epoch=100, lamb=80, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
+           epoch=100, lamb=80, learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train
     if embeded_matrix.shape[0] > 0:
         matrix_input = vstack((matrix_input, embeded_matrix.T))
 
     m, n = matrix_input.shape
-    model = CDE_VAE(n, rank, 128, lamb=lamb, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
+    model = CDE_VAE(n, rank, 128, lamb=lamb, learning_rate=learning_rate, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
 
     model.train_model(matrix_input, corruption, epoch)
 
