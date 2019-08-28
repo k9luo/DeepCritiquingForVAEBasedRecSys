@@ -48,7 +48,7 @@ def main(args):
     start_time = time.time()
 
 #    model = models[args.model](matrix_train=R_train, epoch=args.epoch, lamb=args.lamb, rank=args.rank, corruption=0.5, optimizer="RMSProp")
-    RQ, Yt, Bias = models[args.model](matrix_train=R_train, epoch=args.epoch, lamb=args.lamb, rank=args.rank, corruption=0.5, optimizer="RMSProp")
+    RQ, Yt, Bias = models[args.model](matrix_train=R_train, epoch=args.epoch, lamb=args.lamb, learning_rate=args.learning_rate, rank=args.rank, corruption=args.corruption, optimizer="RMSProp")
     Y = Yt.T
 
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
