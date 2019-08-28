@@ -92,11 +92,12 @@ class CDE_VAE(object):
                     latent_loss = tf.losses.mean_squared_error(labels=latent,
                                                                predictions=reconstructed_latent)
 
+                """
                 with tf.variable_scope("decoder_reconstruction_loss"):
                     decoder_loss = tf.losses.mean_squared_error(labels=self.input,
                                                                predictions=self.obs_mean)
-
                 """
+
                 if self._observation_distribution == 'Gaussian':
                     with tf.variable_scope('gaussian'):
                         obj = self._gaussian_log_likelihood(self.input, self.obs_mean, self._observation_std)
@@ -106,13 +107,12 @@ class CDE_VAE(object):
                 else:
                     with tf.variable_scope('multinomial'):
                         obj = self._multinomial_log_likelihood(self.input, self.obs_mean)
-                """
 
                 with tf.variable_scope('l2'):
                     l2_loss = tf.reduce_mean(tf.nn.l2_loss(encode_weights) + tf.nn.l2_loss(self.decode_weights))
 
-#                self._loss = self._beta * kl + obj + self._lamb * l2_loss + tf.reduce_mean(latent_loss)
-                self._loss = self._beta * kl + tf.reduce_mean(decoder_loss) + self._lamb * l2_loss + tf.reduce_mean(latent_loss)
+                self._loss = self._beta * kl + obj + self._lamb * l2_loss + 10 * tf.reduce_mean(latent_loss)
+#                self._loss = self._beta * kl + tf.reduce_mean(decoder_loss) + self._lamb * l2_loss + tf.reduce_mean(latent_loss)
 
             with tf.variable_scope('optimizer'):
                 optimizer = self._optimizer(learning_rate=self._learning_rate)
