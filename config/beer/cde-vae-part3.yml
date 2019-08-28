@@ -1,7 +1,7 @@
 parameters:
     models: CDE-VAE
     epoch: [300]
-    lambda: [0.00001, 0.0001, 0.001, 0.01, 0.1]
+    lambda: [0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]
     rank: [100]
     corruption: [0.4]
     optimizer: [Adam]
