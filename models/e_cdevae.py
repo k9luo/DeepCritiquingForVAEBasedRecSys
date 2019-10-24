@@ -8,7 +8,7 @@ from scipy.sparse import vstack, hstack
 from utils.regularizers import Regularizer
 
 
-class CDE_VAE(object):
+class E_CDE_VAE(object):
 
     def __init__(self, observation_dim, latent_dim, batch_size,
                  lamb=0.01,
@@ -206,25 +206,17 @@ class CDE_VAE(object):
         return self.sess.run(self.decode_bias)
 
 
-def cde_vae(matrix_train, embeded_matrix=np.empty((0)),
-           epoch=100, lamb=80, learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
+def e_cde_vae(matrix_train, embeded_matrix=np.empty((0)), epoch=100, lamb=80,
+            learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train
     if embeded_matrix.shape[0] > 0:
         matrix_input = vstack((matrix_input, embeded_matrix.T))
 
     m, n = matrix_input.shape
-    model = CDE_VAE(n, rank, 128, lamb=lamb, learning_rate=learning_rate, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
+    model = E_CDE_VAE(n, rank, 128, lamb=lamb, learning_rate=learning_rate, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
 
     model.train_model(matrix_input, corruption, epoch)
 
-    RQ = model.get_RQ(matrix_input)
-    Y = model.get_Y()
-    Bias = model.get_Bias()
-#    import ipdb; ipdb.set_trace()
+    return model
 
-    model.sess.close()
-    tf.reset_default_graph()
-
-    return RQ, Y, Bias
-#    return model
