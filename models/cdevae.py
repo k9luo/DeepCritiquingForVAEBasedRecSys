@@ -70,8 +70,7 @@ class CDE_VAE(object):
 
             with tf.variable_scope("looping"):
                 reconstructed_latent = tf.layers.dense(inputs=self.obs_mean, units=self._latent_dim*2,
-                                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(
-                                                           scale=self._lamb),
+                                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb),
                                                        activation=None, name='latent_reconstruction', reuse=False)
 
                 modified_latent = tf.layers.dense(inputs=self.modified_predict, units=self._latent_dim*2,
@@ -95,7 +94,7 @@ class CDE_VAE(object):
                 """
                 with tf.variable_scope("decoder_reconstruction_loss"):
                     decoder_loss = tf.losses.mean_squared_error(labels=self.input,
-                                                               predictions=self.obs_mean)
+                                                                predictions=self.obs_mean)
                 """
 
                 if self._observation_distribution == 'Gaussian':
