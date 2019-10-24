@@ -74,8 +74,7 @@ def main(args):
     model = models[args.model](matrix_train=R_train, epoch=args.epoch, lamb=args.lamb,
                                learning_rate=args.learning_rate, rank=args.rank,
                                corruption=args.corruption, optimizer=args.optimizer,
-                               R_train_keyphrase=R_train_keyphrase,
-                               R_valid_keyphrase=R_valid_keyphrase)
+                               matrix_train_keyphrase=R_train_keyphrase)
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
 
     progress.section("Predict")
