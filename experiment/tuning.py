@@ -5,6 +5,7 @@ from utils.modelnames import models
 from utils.progress import WorkSplitter
 
 import pandas as pd
+import tensorflow as tf
 
 
 def hyper_parameter_tuning(train, validation, params, save_path):
@@ -46,21 +47,19 @@ def hyper_parameter_tuning(train, validation, params, save_path):
 
                                 progress.subsection("Training")
 
-                                RQ, Yt, Bias = models[algorithm](matrix_train=train,
+                                model = models[algorithm](matrix_train=train,
                                                                  epoch=epoch,
                                                                  lamb=lamb,
                                                                  learning_rate=learning_rate,
                                                                  rank=rank,
                                                                  corruption=corruption,
                                                                  optimizer=optimizer)
-                                Y = Yt.T
 
                                 progress.subsection("Prediction")
 #                                import ipdb; ipdb.set_trace()
 
-                                prediction = predict(matrix_U=RQ,
-                                                     matrix_V=Y,
-                                                     bias=Bias,
+                                prediction_score = model.inference(train.todense())
+                                prediction = predict(prediction_score,
                                                      topK=params['topK'][-1],
                                                      matrix_Train=train)
 
@@ -81,6 +80,9 @@ def hyper_parameter_tuning(train, validation, params, save_path):
                                                          round(result[name][1], 4)]
 
                                 df = df.append(result_dict, ignore_index=True)
+
+                                model.sess.close()
+                                tf.reset_default_graph()
 
                                 save_dataframe_csv(df, table_path, save_path)
 
