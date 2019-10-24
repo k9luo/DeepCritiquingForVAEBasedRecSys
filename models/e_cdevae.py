@@ -7,7 +7,7 @@ from utils.progress import WorkSplitter, inhour
 from scipy.sparse import vstack, hstack
 from utils.regularizers import Regularizer
 
-
+#test
 class E_CDE_VAE(object):
 
     def __init__(self, observation_dim, latent_dim, batch_size,
