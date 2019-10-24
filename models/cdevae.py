@@ -206,8 +206,8 @@ class CDE_VAE(object):
         return self.sess.run(self.decode_bias)
 
 
-def cde_vae(matrix_train, embeded_matrix=np.empty((0)),
-           epoch=100, lamb=80, learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
+def cde_vae(matrix_train, embeded_matrix=np.empty((0)), epoch=100, lamb=80,
+            learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train
     if embeded_matrix.shape[0] > 0:
@@ -218,13 +218,5 @@ def cde_vae(matrix_train, embeded_matrix=np.empty((0)),
 
     model.train_model(matrix_input, corruption, epoch)
 
-    RQ = model.get_RQ(matrix_input)
-    Y = model.get_Y()
-    Bias = model.get_Bias()
-#    import ipdb; ipdb.set_trace()
+    return model
 
-    model.sess.close()
-    tf.reset_default_graph()
-
-    return RQ, Y, Bias
-#    return model
