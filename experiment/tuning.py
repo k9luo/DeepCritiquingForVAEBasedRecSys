@@ -48,12 +48,12 @@ def hyper_parameter_tuning(train, validation, params, save_path):
                                 progress.subsection("Training")
 
                                 model = models[algorithm](matrix_train=train,
-                                                                 epoch=epoch,
-                                                                 lamb=lamb,
-                                                                 learning_rate=learning_rate,
-                                                                 rank=rank,
-                                                                 corruption=corruption,
-                                                                 optimizer=optimizer)
+                                                          epoch=epoch,
+                                                          lamb=lamb,
+                                                          learning_rate=learning_rate,
+                                                          rank=rank,
+                                                          corruption=corruption,
+                                                          optimizer=optimizer)
 
                                 progress.subsection("Prediction")
 #                                import ipdb; ipdb.set_trace()
