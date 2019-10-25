@@ -31,6 +31,11 @@ def find_best_hyperparameters(folder_path, metric):
         df[metric+'_Score'] = df[metric].map(lambda x: ast.literal_eval(x)[0])
         best_settings.append(df.loc[df[metric+'_Score'].idxmax()].to_dict())
 
-    df = pd.DataFrame(best_settings).drop(metric+'_Score', axis=1)
+    df = pd.DataFrame(best_settings)
+
+    if any(df['model'].duplicated()):
+        df = df.groupby('model', group_keys=False).apply(lambda x: x.loc[x[metric+'_Score'].idxmax()]).reset_index(drop=True)
+
+    df = df.drop(metric+'_Score', axis=1)
 
     return df
