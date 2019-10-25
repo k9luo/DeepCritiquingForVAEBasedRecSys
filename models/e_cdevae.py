@@ -131,7 +131,7 @@ class E_CDE_VAE(object):
                     l2_loss = tf.reduce_mean(tf.nn.l2_loss(encode_weights) + tf.nn.l2_loss(self.decode_weights))
                 
                 #TODO Loss function Tuning
-                self._loss = self._beta * kl + obj + self._lamb * l2_loss + 10 * tf.reduce_mean(latent_loss) + kp_decoder_loss
+                self._loss = self._beta * kl + obj + self._lamb * l2_loss + 5 * tf.reduce_mean(latent_loss) + 5*kp_decoder_loss
 
 #                self._loss = self._beta * kl + tf.reduce_mean(decoder_loss) + self._lamb * l2_loss + tf.reduce_mean(latent_loss)
 
@@ -170,9 +170,9 @@ class E_CDE_VAE(object):
         return log_like
 
     def inference(self, x):
-        predict = self.sess.run(self.obs_mean,
+        obs_predict, kp_predict = self.sess.run([self.obs_mean,self.kp_mean],
                                  feed_dict={self.obs_input: x, self.corruption: 0, self.sampling: False})
-        return predict
+        return obs_predict, kp_predict
 
     def uncertainty(self, x):
         gaussian_parameters = self.sess.run([self.mean, self.stddev],
@@ -180,10 +180,10 @@ class E_CDE_VAE(object):
 
         return gaussian_parameters
 
-    def critiquing(self, x, modified):
+    def critiquing(self, x, modified_kp):
         predict = self.sess.run(self.modified_decoded,
                                  feed_dict={self.obs_input: x, self.corruption: 0,
-                                            self.sampling: False, self.modified_predict: modified})
+                                            self.sampling: False, self.modified_predict: modified_kp})
 
         return predict
 
@@ -196,7 +196,7 @@ class E_CDE_VAE(object):
         pbar = tqdm(range(epoch))
         for i in pbar:
             for step in range(len(batches)):
-                feed_dict = {self.obs_input: batches[step].todense(), self.kp_input:batches_kp[step].todense(), self.corruption: corruption, self.sampling: True}
+                feed_dict = {self.obs_input: batches[step].todense(), self.kp_input:batches_kp[step], self.corruption: corruption, self.sampling: True}
                 training = self.sess.run([self._train], feed_dict=feed_dict)
 
     def get_batches(self, matrix, batch_size):
