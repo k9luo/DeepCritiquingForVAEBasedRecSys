@@ -12,7 +12,6 @@ def general(train, test, params, save_path):
     progress = WorkSplitter()
     table_path = load_yaml('config/global.yml', key='path')['tables']
     df = find_best_hyperparameters(table_path + params['tuning_result_path'], 'NDCG')
-#    import ipdb; ipdb.set_trace()
 
     try:
         output_df = load_dataframe_csv(table_path, save_path)
@@ -25,7 +24,7 @@ def general(train, test, params, save_path):
         rank = row['rank']
         lamb = row['lambda']
         learning_rate = row['learning_rate']
-        epoch = 10
+        epoch = row['epoch']
         corruption = row['corruption']
         optimizer = row['optimizer']
 
