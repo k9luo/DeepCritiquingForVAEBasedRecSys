@@ -10,7 +10,7 @@ from utils.regularizers import Regularizer
 #test
 class E_CDE_VAE(object):
 
-    def __init__(self, observation_dim, latent_dim, batch_size,
+    def __init__(self, observation_dim, keyphrase_dim, latent_dim, batch_size,
                  lamb=0.01,
                  beta=0.2,
                  learning_rate=1e-4,
@@ -23,6 +23,7 @@ class E_CDE_VAE(object):
         self._latent_dim = latent_dim
         self._batch_size = batch_size
         self._observation_dim = observation_dim
+        self._keyphrase_dim = keyphrase_dim
         self._learning_rate = learning_rate
         self._optimizer = optimizer
         self._observation_distribution = observation_distribution
@@ -32,14 +33,16 @@ class E_CDE_VAE(object):
     def _build_graph(self):
 
         with tf.variable_scope('vae'):
-            self.input = tf.placeholder(tf.float32, shape=[None, self._observation_dim])
+            self.obs_input = tf.placeholder(tf.float32, shape=[None, self._observation_dim])
+            self.kp_input = tf.placeholder(tf.float32, shape=[None, self._keyphrase_dim])
             self.corruption = tf.placeholder(tf.float32)
             self.sampling = tf.placeholder(tf.bool)
-            self.modified_predict = tf.placeholder(tf.float32, [None, self._observation_dim], name='modified_predict')
+            # modified_predict dimension change from obs to keyphrase
+            self.modified_predict = tf.placeholder(tf.float32, [None, self._keyphrase_dim], name='modified_predict')
 
-            mask1 = tf.nn.dropout(tf.ones_like(self.input), 1 - self.corruption)
+            mask1 = tf.nn.dropout(tf.ones_like(self.obs_input), 1 - self.corruption)
 
-            wc = self.input * mask1
+            wc = self.obs_input * mask1
 
             with tf.variable_scope('encoder'):
                 encode_weights = tf.Variable(tf.truncated_normal([self._observation_dim, self._latent_dim*2],
@@ -68,8 +71,20 @@ class E_CDE_VAE(object):
 
                 self.obs_mean = decoded
 
+            #keyphrase decoder
+            with tf.variable_scope('keyphrase_decoder'):
+
+                self.kp_decode_weights = tf.Variable(
+                    tf.truncated_normal([self._latent_dim, self._keyphrase_dim], stddev=1 / 500.0),
+                    name="Keyphrase_Weights")
+                self.kp_decode_bias = tf.Variable(tf.constant(0., shape=[self._keyphrase_dim]), name="keyphrase_Bias")
+                kp_decoded = tf.matmul(self.z, self.kp_decode_weights) + self.kp_decode_bias
+
+                self.kp_mean = kp_decoded
+
+            #looping with keyphrase
             with tf.variable_scope("looping"):
-                reconstructed_latent = tf.layers.dense(inputs=self.obs_mean, units=self._latent_dim*2,
+                reconstructed_latent = tf.layers.dense(inputs=self.kp_mean, units=self._latent_dim*2,
                                                        kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb),
                                                        activation=None, name='latent_reconstruction', reuse=False)
 
@@ -92,25 +107,32 @@ class E_CDE_VAE(object):
                                                                predictions=reconstructed_latent)
 
                 """
-                with tf.variable_scope("decoder_reconstruction_loss"):
-                    decoder_loss = tf.losses.mean_squared_error(labels=self.input,
+                with tf.variable_scope("obs_decoder_reconstruction_loss"):
+                    obs_decoder_loss = tf.losses.mean_squared_error(labels=self.obs_input,
                                                                 predictions=self.obs_mean)
                 """
+                with tf.variable_scope("kp_decoder_reconstruction_loss"):
+                    kp_decoder_loss = tf.losses.mean_squared_error(labels=self.kp_input,
+                                                                predictions=self.kp_mean)
+
+
 
                 if self._observation_distribution == 'Gaussian':
                     with tf.variable_scope('gaussian'):
-                        obj = self._gaussian_log_likelihood(self.input, self.obs_mean, self._observation_std)
+                        obj = self._gaussian_log_likelihood(self.obs_input, self.obs_mean, self._observation_std)
                 elif self._observation_distribution == 'Bernoulli':
                     with tf.variable_scope('bernoulli'):
-                        obj = self._bernoulli_log_likelihood(self.input, self.obs_mean)
+                        obj = self._bernoulli_log_likelihood(self.obs_input, self.obs_mean)
                 else:
                     with tf.variable_scope('multinomial'):
-                        obj = self._multinomial_log_likelihood(self.input, self.obs_mean)
+                        obj = self._multinomial_log_likelihood(self.obs_input, self.obs_mean)
 
                 with tf.variable_scope('l2'):
                     l2_loss = tf.reduce_mean(tf.nn.l2_loss(encode_weights) + tf.nn.l2_loss(self.decode_weights))
+                
+                #TODO Loss function Tuning
+                self._loss = self._beta * kl + obj + self._lamb * l2_loss + 10 * tf.reduce_mean(latent_loss) + kp_decoder_loss
 
-                self._loss = self._beta * kl + obj + self._lamb * l2_loss + 10 * tf.reduce_mean(latent_loss)
 #                self._loss = self._beta * kl + tf.reduce_mean(decoder_loss) + self._lamb * l2_loss + tf.reduce_mean(latent_loss)
 
             with tf.variable_scope('optimizer'):
@@ -149,42 +171,43 @@ class E_CDE_VAE(object):
 
     def inference(self, x):
         predict = self.sess.run(self.obs_mean,
-                                 feed_dict={self.input: x, self.corruption: 0, self.sampling: False})
+                                 feed_dict={self.obs_input: x, self.corruption: 0, self.sampling: False})
         return predict
 
     def uncertainty(self, x):
         gaussian_parameters = self.sess.run([self.mean, self.stddev],
-                                             feed_dict={self.input: x, self.corruption: 0, self.sampling: False})
+                                             feed_dict={self.obs_input: x, self.corruption: 0, self.sampling: False})
 
         return gaussian_parameters
 
     def critiquing(self, x, modified):
         predict = self.sess.run(self.modified_decoded,
-                                 feed_dict={self.input: x, self.corruption: 0,
+                                 feed_dict={self.obs_input: x, self.corruption: 0,
                                             self.sampling: False, self.modified_predict: modified})
 
         return predict
 
-    def train_model(self, rating_matrix, corruption, epoch=100, batches=None, **unused):
+    def train_model(self, rating_matrix, keyphrase_matrix, corruption, epoch=100, batches=None, **unused):
+        #TODO is pretrained batch needed for training?
         if batches is None:
             batches = self.get_batches(rating_matrix, self._batch_size)
-
+            batches_kp = self.get_batches(keyphrase_matrix, self._batch_size)
         # Training
         pbar = tqdm(range(epoch))
         for i in pbar:
             for step in range(len(batches)):
-                feed_dict = {self.input: batches[step].todense(), self.corruption: corruption, self.sampling: True}
+                feed_dict = {self.obs_input: batches[step].todense(), self.kp_input:batches_kp[step].todense(), self.corruption: corruption, self.sampling: True}
                 training = self.sess.run([self._train], feed_dict=feed_dict)
 
-    def get_batches(self, rating_matrix, batch_size):
-        remaining_size = rating_matrix.shape[0]
+    def get_batches(self, matrix, batch_size):
+        remaining_size = matrix.shape[0]
         batch_index = 0
         batches = []
         while remaining_size > 0:
             if remaining_size < batch_size:
-                batches.append(rating_matrix[batch_index*batch_size:])
+                batches.append(matrix[batch_index*batch_size:])
             else:
-                batches.append(rating_matrix[batch_index*batch_size:(batch_index+1)*batch_size])
+                batches.append(matrix[batch_index*batch_size:(batch_index+1)*batch_size])
             batch_index += 1
             remaining_size -= batch_size
         return batches
@@ -193,7 +216,7 @@ class E_CDE_VAE(object):
         batches = self.get_batches(rating_matrix, self._batch_size)
         RQ = []
         for step in range(len(batches)):
-            feed_dict = {self.input: batches[step].todense(), self.corruption: 0, self.sampling: False}
+            feed_dict = {self.obs_input: batches[step].todense(), self.corruption: 0, self.sampling: False}
             embedding = self.sess.run(self.z, feed_dict=feed_dict)
             RQ.append(embedding)
 
@@ -210,13 +233,16 @@ def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0))
             learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train
+    matrix_input_kp = matrix_train_keyphrase
     if embeded_matrix.shape[0] > 0:
         matrix_input = vstack((matrix_input, embeded_matrix.T))
 
     m, n = matrix_input.shape
-    model = E_CDE_VAE(n, rank, 128, lamb=lamb, learning_rate=learning_rate, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
+    _, k = matrix_input_kp.shape
 
-    model.train_model(matrix_input, corruption, epoch)
+    model = E_CDE_VAE(n, k, rank, 128, lamb=lamb, learning_rate=learning_rate, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
+
+    model.train_model(matrix_input, matrix_input_kp, corruption, epoch)
 
     return model
 
