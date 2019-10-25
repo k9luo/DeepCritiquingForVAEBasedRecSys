@@ -213,8 +213,8 @@ def cde_vae(matrix_train, embeded_matrix=np.empty((0)), epoch=100, lamb=80,
     if embeded_matrix.shape[0] > 0:
         matrix_input = vstack((matrix_input, embeded_matrix.T))
 
-    m, n = matrix_input.shape
-    model = CDE_VAE(n, rank, 128, lamb=lamb, learning_rate=learning_rate, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
+    model = CDE_VAE(observation_dim=matrix_input.shape[1], latent_dim=rank, batch_size=128,
+                    lamb=lamb, learning_rate=learning_rate, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
 
     model.train_model(matrix_input, corruption, epoch)
 
