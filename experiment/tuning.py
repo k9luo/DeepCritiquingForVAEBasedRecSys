@@ -58,8 +58,8 @@ def hyper_parameter_tuning(train, validation, params, save_path):
                                 progress.subsection("Prediction")
 #                                import ipdb; ipdb.set_trace()
 
-                                prediction_score = model.inference(train.todense())
-                                prediction = predict(prediction_score,
+                                rating_score, _ = model.predict(train.todense())
+                                prediction = predict(rating_score,
                                                      topK=params['topK'][-1],
                                                      matrix_Train=train)
 
