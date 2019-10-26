@@ -48,8 +48,8 @@ def general(train, test, params, save_path):
 
         progress.subsection("Prediction")
 
-        prediction_score = model.inference(train.todense())
-        prediction = predict(prediction_score,
+        rating_score, _ = model.predict(train.todense())
+        prediction = predict(rating_score,
                              topK=row['topK'][-1],
                              matrix_Train=train)
 
