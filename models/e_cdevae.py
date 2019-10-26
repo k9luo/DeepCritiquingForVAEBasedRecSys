@@ -34,7 +34,7 @@ class E_CDE_VAE(object):
 
         with tf.variable_scope('vae'):
             self.obs_input = tf.placeholder(tf.float32, shape=[None, self._observation_dim])
-            self.kp_input = tf.placeholder(tf.float32, shape=[None, self._keyphrase_dim])
+            self.keyphrase_input = tf.placeholder(tf.float32, shape=[None, self._keyphrase_dim])
             self.corruption = tf.placeholder(tf.float32)
             self.sampling = tf.placeholder(tf.bool)
             # modified_predict dimension change from obs to keyphrase
@@ -74,17 +74,17 @@ class E_CDE_VAE(object):
             #keyphrase decoder
             with tf.variable_scope('keyphrase_decoder'):
 
-                self.kp_decode_weights = tf.Variable(
+                self.keyphrase_decode_weights = tf.Variable(
                     tf.truncated_normal([self._latent_dim, self._keyphrase_dim], stddev=1 / 500.0),
                     name="Keyphrase_Weights")
-                self.kp_decode_bias = tf.Variable(tf.constant(0., shape=[self._keyphrase_dim]), name="keyphrase_Bias")
-                kp_decoded = tf.matmul(self.z, self.kp_decode_weights) + self.kp_decode_bias
+                self.keyphrase_decode_bias = tf.Variable(tf.constant(0., shape=[self._keyphrase_dim]), name="keyphrase_Bias")
+                keyphrase_decoded = tf.matmul(self.z, self.keyphrase_decode_weights) + self.keyphrase_decode_bias
 
-                self.kp_mean = kp_decoded
+                self.keyphrase_mean = keyphrase_decoded
 
             #looping with keyphrase
             with tf.variable_scope("looping"):
-                reconstructed_latent = tf.layers.dense(inputs=self.kp_mean, units=self._latent_dim*2,
+                reconstructed_latent = tf.layers.dense(inputs=self.keyphrase_mean, units=self._latent_dim*2,
                                                        kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb),
                                                        activation=None, name='latent_reconstruction', reuse=False)
 
@@ -111,11 +111,9 @@ class E_CDE_VAE(object):
                     obs_decoder_loss = tf.losses.mean_squared_error(labels=self.obs_input,
                                                                 predictions=self.obs_mean)
                 """
-                with tf.variable_scope("kp_decoder_reconstruction_loss"):
-                    kp_decoder_loss = tf.losses.mean_squared_error(labels=self.kp_input,
-                                                                predictions=self.kp_mean)
-
-
+                with tf.variable_scope("keyphrase_decoder_reconstruction_loss"):
+                    keyphrase_decoder_loss = tf.losses.mean_squared_error(labels=self.keyphrase_input,
+                                                                          predictions=self.keyphrase_mean)
 
                 if self._observation_distribution == 'Gaussian':
                     with tf.variable_scope('gaussian'):
@@ -129,9 +127,9 @@ class E_CDE_VAE(object):
 
                 with tf.variable_scope('l2'):
                     l2_loss = tf.reduce_mean(tf.nn.l2_loss(encode_weights) + tf.nn.l2_loss(self.decode_weights))
-                
+
                 #TODO Loss function Tuning
-                self._loss = self._beta * kl + obj + self._lamb * l2_loss + 5 * tf.reduce_mean(latent_loss) + 5*kp_decoder_loss
+                self._loss = self._beta * kl + obj + self._lamb * l2_loss + 5 * tf.reduce_mean(latent_loss) + 5 * keyphrase_decoder_loss
 
 #                self._loss = self._beta * kl + tf.reduce_mean(decoder_loss) + self._lamb * l2_loss + tf.reduce_mean(latent_loss)
 
@@ -170,7 +168,7 @@ class E_CDE_VAE(object):
         return log_like
 
     def inference(self, x):
-        obs_predict, kp_predict = self.sess.run([self.obs_mean,self.kp_mean],
+        obs_predict, kp_predict = self.sess.run([self.obs_mean, self.keyphrase_mean],
                                  feed_dict={self.obs_input: x, self.corruption: 0, self.sampling: False})
         return obs_predict, kp_predict
 
@@ -191,12 +189,14 @@ class E_CDE_VAE(object):
         #TODO is pretrained batch needed for training?
         if batches is None:
             batches = self.get_batches(rating_matrix, self._batch_size)
-            batches_kp = self.get_batches(keyphrase_matrix, self._batch_size)
+            batches_keyphrase = self.get_batches(keyphrase_matrix, self._batch_size)
         # Training
         pbar = tqdm(range(epoch))
         for i in pbar:
             for step in range(len(batches)):
-                feed_dict = {self.obs_input: batches[step].todense(), self.kp_input:batches_kp[step], self.corruption: corruption, self.sampling: True}
+                feed_dict = {self.obs_input: batches[step].todense(),
+                             self.keyphrase_input:batches_keyphrase[step],
+                             self.corruption: corruption, self.sampling: True}
                 training = self.sess.run([self._train], feed_dict=feed_dict)
 
     def get_batches(self, matrix, batch_size):
@@ -233,16 +233,16 @@ def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0))
             learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train
-    matrix_input_kp = matrix_train_keyphrase
     if embeded_matrix.shape[0] > 0:
         matrix_input = vstack((matrix_input, embeded_matrix.T))
 
-    m, n = matrix_input.shape
-    _, k = matrix_input_kp.shape
+    matrix_input_keyphrase = matrix_train_keyphrase
 
-    model = E_CDE_VAE(n, k, rank, 128, lamb=lamb, learning_rate=learning_rate, observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
+    model = E_CDE_VAE(observation_dim=matrix_input.shape[1], keyphrase_dim=matrix_input_keyphrase.shape[1],
+                      latent_dim=rank, batch_size=128, lamb=lamb, learning_rate=learning_rate,
+                      observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
 
-    model.train_model(matrix_input, matrix_input_kp, corruption, epoch)
+    model.train_model(matrix_input, matrix_input_keyphrase, corruption, epoch)
 
     return model
 
