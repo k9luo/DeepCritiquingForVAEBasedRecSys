@@ -16,7 +16,8 @@ class E_CDE_VAE(object):
                  learning_rate=1e-4,
                  optimizer=tf.train.RMSPropOptimizer,
                  observation_distribution="Multinomial", # or Gaussian or Bernoulli
-                 observation_std=0.01):
+                 observation_std=0.01,
+                 log_dir='./tensorboard'):
 
         self._lamb = lamb
         self._beta = beta
@@ -30,6 +31,7 @@ class E_CDE_VAE(object):
         self._observation_std = observation_std
         self._build_graph()
         self.sess = tf.Session()
+        self.train_writer = tf.summary.FileWriter(log_dir, self.sess.graph)
         self.sess.run(tf.global_variables_initializer())
 
     def _build_graph(self):
@@ -147,6 +149,15 @@ class E_CDE_VAE(object):
                               + self._lamb * l2_loss
                               )
                 """
+            #summary list
+            with tf.name_scope('loss_set'):
+                tf.summary.scalar('kl_loss', kl)
+                tf.summary.scalar('l2_loss', l2_loss)
+                tf.summary.scalar('latent_loss', latent_loss)
+                tf.summary.scalar('observation_loss', rating_obj)
+                tf.summary.scalar('keyphrase_loss',keyphrase_obj)
+                tf.summary.scalar('total_loss', self._loss)
+            self.merged = tf.summary.merge_all()
 
             with tf.variable_scope('optimizer'):
                 optimizer = self._optimizer(learning_rate=self._learning_rate)
@@ -217,8 +228,9 @@ class E_CDE_VAE(object):
                              self.keyphrase_input:batches_keyphrase[step],
                              self.corruption: corruption,
                              self.sampling: True}
-
-                training, loss = self.sess.run([self._train, self._loss], feed_dict=feed_dict)
+                # write summary
+                summary, training, loss = self.sess.run([self.merged, self._train, self._loss], feed_dict=feed_dict)
+                self.train_writer.add_summary(summary, i)
                 pbar.set_description("loss:{}".format(loss))
 
     def get_batches(self, matrix, batch_size):
