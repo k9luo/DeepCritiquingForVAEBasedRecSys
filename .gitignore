@@ -3,3 +3,4 @@
 *.pyc
 *.json
 *-checkpoint.ipynb
+/graphs

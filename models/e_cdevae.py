@@ -38,6 +38,8 @@ class E_CDE_VAE(object):
         self._build_graph()
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
+        # print([n.name for n in tf.get_default_graph().as_graph_def().node])
+        self.writer = tf.summary.FileWriter('./graphs', self.sess.graph)
 
     def _build_graph(self):
 
@@ -111,16 +113,14 @@ class E_CDE_VAE(object):
                     latent_loss = tf.losses.mean_squared_error(labels=latent,
                                                                predictions=reconstructed_latent)
 
-                """
                 # For rating loss, we can also try sigmoid cross-entropy loss.
                 with tf.variable_scope("rating_decoder_reconstruction_loss"):
                     rating_loss = tf.losses.mean_squared_error(labels=self.rating_input,
-                                                                predictions=self.rating_prediction)
+                                                               predictions=self.rating_prediction)
 
                 with tf.variable_scope("keyphrase_decoder_reconstruction_loss"):
                     keyphrase_loss = tf.losses.mean_squared_error(labels=self.keyphrase_input,
                                                                   predictions=self.keyphrase_prediction)
-                """
 
                 if self._observation_distribution == 'Gaussian':
                     with tf.variable_scope('gaussian'):
@@ -138,7 +138,7 @@ class E_CDE_VAE(object):
                 with tf.variable_scope('l2'):
                     l2_loss = tf.losses.get_regularization_loss()
 
-                # TODO Loss function Tuning
+                """
                 self._loss = (self._lamb_rating * rating_obj
                               + self._lamb_keyphrase * keyphrase_obj
                               + self._lamb_latent * tf.reduce_mean(latent_loss)
@@ -153,6 +153,15 @@ class E_CDE_VAE(object):
                               + self._beta * kl
                               + self._lamb_l2 * l2_loss
                               )
+
+                """
+                rating_loss_scalar_summary = tf.summary.scalar('Rating_loss_scalar_summary', self._lamb_rating * tf.reduce_mean(rating_loss))
+                keyphrase_loss_scalar_summary = tf.summary.scalar('Keyphrase_loss_scalar_summary', self._lamb_keyphrase * tf.reduce_mean(keyphrase_loss))
+                latent_loss_scalar_summary = tf.summary.scalar('Latent_loss_scalar_summary', self._lamb_latent * tf.reduce_mean(latent_loss))
+                kl_scalar_summary = tf.summary.scalar('KL_scalar_summary', self._beta * kl)
+                l2_loss_scalar_summary = tf.summary.scalar('L2_scalar_summary', self._lamb_l2 * l2_loss)
+                total_loss_scalar_summary = tf.summary.scalar('Total_loss_scalar_summary', self._loss)
+                writer.add_summary(summary)
                 """
 
             with tf.variable_scope('optimizer'):

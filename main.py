@@ -97,6 +97,7 @@ def main(args):
 
         metric_names = ['R-Precision', 'NDCG', 'Clicks', 'Recall', 'Precision', 'MAP']
         result = evaluate(prediction, R_valid, metric_names, [args.topk])
+
         print("-")
         for metric in result.keys():
             print("{}:{}".format(metric, result[metric]))
@@ -104,6 +105,7 @@ def main(args):
         if keyphrase_score is not None:
             keyphrase_prediction = predict_keyphrase(keyphrase_score, args.topk)
             keyphrase_result = evaluate(keyphrase_prediction, sparse.csr_matrix(R_valid_keyphrase), metric_names, [args.topk])
+
             print("-")
             for metric in keyphrase_result.keys():
                 print("{}:{}".format(metric, keyphrase_result[metric]))
@@ -168,7 +170,7 @@ if __name__ == "__main__":
                         action='store_false',
                         help='Boolean flag indicating if keyphrase frequency is binarized.')
 
-    parser.add_argument('--optimizer', dest='optimizer', default="RMSProp",
+    parser.add_argument('--optimizer', dest='optimizer', default="Adam",
                         help='Optimizer currently using. (default: %(default)s)')
 
     parser.add_argument('--predict_batch_size', dest='predict_batch_size', default=128,
