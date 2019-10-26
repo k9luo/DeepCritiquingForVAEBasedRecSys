@@ -147,10 +147,10 @@ class CDE_VAE(object):
         log_like = -tf.reduce_mean(tf.reduce_sum(log_softmax_output * target, axis=1))
         return log_like
 
-    def inference(self, x):
+    def predict(self, x):
         predict = self.sess.run(self.obs_mean,
                                  feed_dict={self.input: x, self.corruption: 0, self.sampling: False})
-        return predict
+        return predict, None
 
     def uncertainty(self, x):
         gaussian_parameters = self.sess.run([self.mean, self.stddev],
