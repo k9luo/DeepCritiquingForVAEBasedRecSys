@@ -1,6 +1,6 @@
-
 from evaluation.general_performance import evaluate
 from prediction.predictor import predict
+from prediction.predictor import predict_keyphrase
 from utils.argcheck import check_float_positive, check_int_positive
 from utils.io import load_numpy
 from utils.modelnames import models
@@ -8,6 +8,7 @@ from utils.progress import inhour, WorkSplitter
 
 import argparse
 import numpy as np
+from scipy import sparse
 import tensorflow as tf
 import time
 
@@ -81,11 +82,9 @@ def main(args):
     start_time = time.time()
 
     rating_score, keyphrase_score = model.predict(R_train.todense())
-#    import ipdb; ipdb.set_trace()
     prediction = predict(rating_score, args.topk, matrix_Train=R_train)
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
 
-#    import ipdb; ipdb.set_trace()
 
     if args.enable_evaluation:
         progress.section("Create Metrics")
@@ -96,6 +95,14 @@ def main(args):
         print("-")
         for metric in result.keys():
             print("{}:{}".format(metric, result[metric]))
+
+        if keyphrase_score is not None:
+            keyphrase_prediction = predict_keyphrase(keyphrase_score, args.topk)
+            keyphrase_result = evaluate(keyphrase_prediction, sparse.csr_matrix(R_valid_keyphrase), metric_names, [args.topk])
+            print("-")
+            for metric in keyphrase_result.keys():
+                print("{}:{}".format(metric, keyphrase_result[metric]))
+
         print("Elapsed: {}".format(inhour(time.time() - start_time)))
 
     model.sess.close()

@@ -31,3 +31,24 @@ def sub_routine(vector_prediction, vector_train, topK=500):
 
     return vector_predict[:topK]
 
+def predict_keyphrase(prediction_score, topK):
+
+    prediction = []
+
+    for user_index in tqdm(range(prediction_score.shape[0])):
+        vector_prediction = prediction_score[user_index]
+        vector_predict = sub_routine_keyphrase(vector_prediction, topK=topK)
+
+        prediction.append(vector_predict)
+
+    return np.vstack(prediction)
+
+def sub_routine_keyphrase(vector_prediction, topK=500):
+
+    vector_predict = vector_prediction
+
+    candidate_index = np.argpartition(-vector_predict, topK)[:topK]
+    vector_predict = candidate_index[vector_predict[candidate_index].argsort()[::-1]]
+
+    return vector_predict
+
