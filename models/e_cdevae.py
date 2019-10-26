@@ -109,34 +109,44 @@ class E_CDE_VAE(object):
                 with tf.variable_scope("rating_decoder_reconstruction_loss"):
                     rating_loss = tf.losses.mean_squared_error(labels=self.rating_input,
                                                                 predictions=self.rating_prediction)
-                """
 
                 with tf.variable_scope("keyphrase_decoder_reconstruction_loss"):
                     keyphrase_loss = tf.losses.mean_squared_error(labels=self.keyphrase_input,
                                                                   predictions=self.keyphrase_prediction)
+                """
 
                 if self._observation_distribution == 'Gaussian':
                     with tf.variable_scope('gaussian'):
-                        obj = self._gaussian_log_likelihood(self.rating_input, self.rating_prediction, self._observation_std)
+                        rating_obj = self._gaussian_log_likelihood(self.rating_input, self.rating_prediction, self._observation_std)
+                        keyphrase_obj = self._gaussian_log_likelihood(self.keyphrase_input, self.keyphrase_prediction, self._observation_std)
                 elif self._observation_distribution == 'Bernoulli':
                     with tf.variable_scope('bernoulli'):
-                        obj = self._bernoulli_log_likelihood(self.rating_input, self.rating_prediction)
+                        rating_obj = self._bernoulli_log_likelihood(self.rating_input, self.rating_prediction)
+                        keyphrase_obj = self._bernoulli_log_likelihood(self.keyphrase_input, self.keyphrase_prediction)
                 else:
                     with tf.variable_scope('multinomial'):
-                        obj = self._multinomial_log_likelihood(self.rating_input, self.rating_prediction)
+                        rating_obj = self._multinomial_log_likelihood(self.rating_input, self.rating_prediction)
+                        keyphrase_obj = self._multinomial_log_likelihood(self.keyphrase_input, self.keyphrase_prediction)
+                obj = rating_obj + keyphrase_obj
 
                 with tf.variable_scope('l2'):
                     l2_loss = tf.losses.get_regularization_loss()
 
                 # TODO Loss function Tuning
                 self._loss = (obj
-                              + 5 * tf.reduce_mean(keyphrase_loss)
                               + 5 * tf.reduce_mean(latent_loss)
                               + self._beta * kl
                               + self._lamb * l2_loss
                               )
 
-#                self._loss = self._beta * kl + tf.reduce_mean(decoder_loss) + self._lamb * l2_loss + tf.reduce_mean(latent_loss)
+                """
+                self._loss = (5 * tf.reduce_mean(rating_loss)
+                              + 5 * tf.reduce_mean(keyphrase_loss)
+                              + 5 * tf.reduce_mean(latent_loss)
+                              + self._beta * kl
+                              + self._lamb * l2_loss
+                              )
+                """
 
             with tf.variable_scope('optimizer'):
                 optimizer = self._optimizer(learning_rate=self._learning_rate)
