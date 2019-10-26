@@ -26,7 +26,11 @@ def main(args):
     print("Corruption Rate: {}".format(args.corruption))
     print("Learning Rate: {}".format(args.learning_rate))
     print("Epoch: {}".format(args.epoch))
-    print("Lambda: {}".format(args.lamb))
+    print("Lambda L2: {}".format(args.lamb_l2))
+    print("Lambda Keyphrase: {}".format(args.lamb_keyphrase))
+    print("Lambda Latent: {}".format(args.lamb_latent))
+    print("Lambda Rating: {}".format(args.lamb_rating))
+    print("Beta: {}".format(args.beta))
     print("Rank: {}".format(args.rank))
     print("Train Batch Size: {}".format(args.train_batch_size))
     print("Predict Batch Size: {}".format(args.predict_batch_size))
@@ -72,7 +76,9 @@ def main(args):
     progress.section("Train")
     start_time = time.time()
 
-    model = models[args.model](matrix_train=R_train, epoch=args.epoch, lamb=args.lamb,
+    model = models[args.model](matrix_train=R_train, epoch=args.epoch, lamb_l2=args.lamb_l2,
+                               lamb_keyphrase=args.lamb_keyphrase, lamb_latent=args.lamb_latent,
+                               lamb_rating=args.lamb_rating, beta=args.beta,
                                learning_rate=args.learning_rate, rank=args.rank,
                                corruption=args.corruption, optimizer=args.optimizer,
                                matrix_train_keyphrase=R_train_keyphrase)
@@ -84,7 +90,6 @@ def main(args):
     rating_score, keyphrase_score = model.predict(R_train.todense())
     prediction = predict(rating_score, args.topk, matrix_Train=R_train)
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
-
 
     if args.enable_evaluation:
         progress.section("Create Metrics")
@@ -113,6 +118,10 @@ if __name__ == "__main__":
     # Commandline arguments
     parser = argparse.ArgumentParser(description="CDE-VAE")
 
+    parser.add_argument('--beta', dest='beta', default=0.2,
+                        type=check_float_positive,
+                        help='KL strength used in models. (default: %(default)s)')
+
     parser.add_argument('--corruption', dest='corruption', default=0.5,
                         type=check_float_positive,
                         help='Corruption rate used in models. (default: %(default)s)')
@@ -132,9 +141,21 @@ if __name__ == "__main__":
                         type=check_int_positive,
                         help='The number of epochs used in training models. (default: %(default)s)')
 
-    parser.add_argument('--lambda', dest='lamb', default=1.0,
+    parser.add_argument('--lambda_l2', dest='lamb_l2', default=1.0,
                         type=check_float_positive,
-                        help='Regularizer strength used in models. (default: %(default)s)')
+                        help='L2 Regularizer strength used in models. (default: %(default)s)')
+
+    parser.add_argument('--lambda_keyphrase', dest='lamb_keyphrase', default=1.0,
+                        type=check_float_positive,
+                        help='Keyphrase loss strength used in models. (default: %(default)s)')
+
+    parser.add_argument('--lambda_latent', dest='lamb_latent', default=5.0,
+                        type=check_float_positive,
+                        help='Latent reconstruction loss strength used in models. (default: %(default)s)')
+
+    parser.add_argument('--lambda_rating', dest='lamb_rating', default=1.0,
+                        type=check_float_positive,
+                        help='Rating loss strength used in models. (default: %(default)s)')
 
     parser.add_argument('--learning_rate', dest='learning_rate', default=0.0001,
                         type=check_float_positive,

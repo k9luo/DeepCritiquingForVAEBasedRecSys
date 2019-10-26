@@ -1,24 +1,31 @@
-import re
-import numpy as np
-import tensorflow as tf
-from tqdm import tqdm
-from tensorflow.contrib.distributions import Bernoulli
-from utils.progress import WorkSplitter, inhour
 from scipy.sparse import vstack, hstack
+from tensorflow.contrib.distributions import Bernoulli
+from tqdm import tqdm
+from utils.progress import WorkSplitter, inhour
 from utils.regularizers import Regularizer
 
-#test
+import numpy as np
+import re
+import tensorflow as tf
+
+
 class E_CDE_VAE(object):
 
     def __init__(self, observation_dim, keyphrase_dim, latent_dim, batch_size,
-                 lamb=0.01,
+                 lamb_l2=0.01,
+                 lamb_keyphrase=1,
+                 lamb_latent=5,
+                 lamb_rating=1,
                  beta=0.2,
                  learning_rate=1e-4,
                  optimizer=tf.train.RMSPropOptimizer,
                  observation_distribution="Multinomial", # or Gaussian or Bernoulli
                  observation_std=0.01):
 
-        self._lamb = lamb
+        self._lamb_l2 = lamb_l2
+        self._lamb_keyphrase = lamb_keyphrase,
+        self._lamb_latent = lamb_latent,
+        self._lamb_rating = lamb_rating,
         self._beta = beta
         self._latent_dim = latent_dim
         self._batch_size = batch_size
@@ -48,7 +55,7 @@ class E_CDE_VAE(object):
 
             with tf.variable_scope('encoder'):
                 encoded = tf.layers.dense(inputs=wc, units=self._latent_dim*2,
-                                          kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb),
+                                          kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb_l2),
                                           activation=None, name="Encoder_Weights")
 
             with tf.variable_scope('latent'):
@@ -64,11 +71,11 @@ class E_CDE_VAE(object):
 
             with tf.variable_scope("prediction", reuse=False):
                 rating_prediction = tf.layers.dense(inputs=self.z, units=self._observation_dim,
-                                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb),
+                                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb_l2),
                                                     activation=None, name='rating_prediction')
 
                 keyphrase_prediction = tf.layers.dense(inputs=self.z, units=self._keyphrase_dim,
-                                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb),
+                                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb_l2),
                                                        activation=None, name='keyphrase_prediction')
 
                 self.rating_prediction = rating_prediction
@@ -77,7 +84,7 @@ class E_CDE_VAE(object):
             # looping with keyphrase
             with tf.variable_scope("looping"):
                 reconstructed_latent = tf.layers.dense(inputs=self.keyphrase_prediction, units=self._latent_dim*2,
-                                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb),
+                                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb_l2),
                                                        activation=None, name='latent_reconstruction', reuse=False)
 
                 modified_latent = tf.layers.dense(inputs=self.modified_keyphrase, units=self._latent_dim*2,
@@ -127,24 +134,24 @@ class E_CDE_VAE(object):
                     with tf.variable_scope('multinomial'):
                         rating_obj = self._multinomial_log_likelihood(self.rating_input, self.rating_prediction)
                         keyphrase_obj = self._multinomial_log_likelihood(self.keyphrase_input, self.keyphrase_prediction)
-                obj = rating_obj + keyphrase_obj
 
                 with tf.variable_scope('l2'):
                     l2_loss = tf.losses.get_regularization_loss()
 
                 # TODO Loss function Tuning
-                self._loss = (obj
-                              + 5 * tf.reduce_mean(latent_loss)
+                self._loss = (self._lamb_rating * rating_obj
+                              + self._lamb_keyphrase * keyphrase_obj
+                              + self._lamb_latent * tf.reduce_mean(latent_loss)
                               + self._beta * kl
-                              + self._lamb * l2_loss
+                              + self._lamb_l2 * l2_loss
                               )
 
                 """
-                self._loss = (5 * tf.reduce_mean(rating_loss)
-                              + 5 * tf.reduce_mean(keyphrase_loss)
-                              + 5 * tf.reduce_mean(latent_loss)
+                self._loss = (self._lamb_rating * tf.reduce_mean(rating_loss)
+                              + self._lamb_keyphrase * tf.reduce_mean(keyphrase_loss)
+                              + self._lamb_latent * tf.reduce_mean(latent_loss)
                               + self._beta * kl
-                              + self._lamb * l2_loss
+                              + self._lamb_l2 * l2_loss
                               )
                 """
 
@@ -156,7 +163,6 @@ class E_CDE_VAE(object):
 
     @staticmethod
     def _kl_diagnormal_stdnormal(mu, log_std):
-
         var_square = tf.exp(2 * log_std)
         kl = 0.5 * tf.reduce_mean(tf.square(mu) + var_square - 1. - 2 * log_std)
         return kl
@@ -168,7 +174,6 @@ class E_CDE_VAE(object):
 
     @staticmethod
     def _bernoulli_log_likelihood(targets, outputs, eps=1e-8):
-
         log_like = -tf.reduce_mean(targets * tf.log(outputs + eps)
                                    + (1. - targets) * tf.log((1. - outputs) + eps))
         return log_like
@@ -235,8 +240,9 @@ class E_CDE_VAE(object):
         return batches
 
 
-def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0)), epoch=100, lamb=80,
-            learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
+def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0)),
+              epoch=100, lamb_l2=80, lamb_keyphrase=1, lamb_latent=5, lamb_rating=1,
+              beta=0.2, learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train
     if embeded_matrix.shape[0] > 0:
@@ -245,7 +251,8 @@ def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0))
     matrix_input_keyphrase = matrix_train_keyphrase
 
     model = E_CDE_VAE(observation_dim=matrix_input.shape[1], keyphrase_dim=matrix_input_keyphrase.shape[1],
-                      latent_dim=rank, batch_size=128, lamb=lamb, learning_rate=learning_rate,
+                      latent_dim=rank, batch_size=128, lamb_l2=lamb_l2, lamb_keyphrase=lamb_keyphrase,
+                      lamb_latent=lamb_latent, lamb_rating=lamb_rating, beta=beta, learning_rate=learning_rate,
                       observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
 
     model.train_model(matrix_input, matrix_input_keyphrase, corruption, epoch)
