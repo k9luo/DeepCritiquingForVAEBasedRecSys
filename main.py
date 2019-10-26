@@ -80,8 +80,9 @@ def main(args):
     progress.section("Predict")
     start_time = time.time()
 
-    prediction_score = model.inference(R_train.todense())
-    prediction = predict(prediction_score, args.topk, matrix_Train=R_train)
+    rating_score, keyphrase_score = model.predict(R_train.todense())
+#    import ipdb; ipdb.set_trace()
+    prediction = predict(rating_score, args.topk, matrix_Train=R_train)
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
 
 #    import ipdb; ipdb.set_trace()
