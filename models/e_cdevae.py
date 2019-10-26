@@ -39,8 +39,8 @@ class E_CDE_VAE(object):
             self.keyphrase_input = tf.placeholder(tf.float32, shape=[None, self._keyphrase_dim])
             self.corruption = tf.placeholder(tf.float32)
             self.sampling = tf.placeholder(tf.bool)
-            # modified_predict dimension change from obs to keyphrase
-            self.modified_predict = tf.placeholder(tf.float32, [None, self._keyphrase_dim], name='modified_predict')
+            # modified_keyphrase dimension change from rating to keyphrase
+            self.modified_keyphrase = tf.placeholder(tf.float32, [None, self._keyphrase_dim], name='modified_keyphrases')
 
             mask1 = tf.nn.dropout(tf.ones_like(self.rating_input), 1 - self.corruption)
 
@@ -80,7 +80,7 @@ class E_CDE_VAE(object):
                                                        kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb),
                                                        activation=None, name='latent_reconstruction', reuse=False)
 
-                modified_latent = tf.layers.dense(inputs=self.modified_predict, units=self._latent_dim*2,
+                modified_latent = tf.layers.dense(inputs=self.modified_keyphrase, units=self._latent_dim*2,
                                                   activation=None, name='latent_reconstruction', reuse=True)
 
                 self.modified_mean = tf.nn.relu(modified_latent)[:, :self._latent_dim]
@@ -195,12 +195,12 @@ class E_CDE_VAE(object):
         return gaussian_parameters
 
     def refined_predict(self, rating_input, critiqued):
-        modified_rating, modified_keyphrases = self.sess.run(self.modified_rating_prediction,
-                                                             self.modified_keyphrase_prediction,
+        modified_rating, modified_keyphrases = self.sess.run([self.modified_rating_prediction,
+                                                              self.modified_keyphrase_prediction],
                                                              feed_dict={self.rating_input: rating_input,
                                                                         self.corruption: 0,
                                                                         self.sampling: False,
-                                                                        self.modified_predict: critiqued})
+                                                                        self.modified_keyphrase: critiqued})
 
         return modified_rating, modified_keyphrases
 
