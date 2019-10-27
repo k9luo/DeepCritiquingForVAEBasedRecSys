@@ -39,7 +39,7 @@ class E_CDE_VAE(object):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
         # print([n.name for n in tf.get_default_graph().as_graph_def().node])
-        self.writer = tf.summary.FileWriter('./graphs', self.sess.graph)
+#        self.writer = tf.summary.FileWriter('./graphs', self.sess.graph)
 
     def _build_graph(self):
 
@@ -154,15 +154,21 @@ class E_CDE_VAE(object):
                               + self._lamb_l2 * l2_loss
                               )
 
-                """
-                rating_loss_scalar_summary = tf.summary.scalar('Rating_loss_scalar_summary', self._lamb_rating * tf.reduce_mean(rating_loss))
-                keyphrase_loss_scalar_summary = tf.summary.scalar('Keyphrase_loss_scalar_summary', self._lamb_keyphrase * tf.reduce_mean(keyphrase_loss))
-                latent_loss_scalar_summary = tf.summary.scalar('Latent_loss_scalar_summary', self._lamb_latent * tf.reduce_mean(latent_loss))
+            """
+            with tf.name_scope('loss-for-tensorboard'):
+                rating_loss_scalar_summary = tf.summary.scalar('Rating_loss_scalar_summary', tf.reshape(self._lamb_rating * tf.reduce_mean(rating_loss), []))
+                keyphrase_loss_scalar_summary = tf.summary.scalar('Keyphrase_loss_scalar_summary', tf.reshape(self._lamb_keyphrase * tf.reduce_mean(keyphrase_loss), []))
+                latent_loss_scalar_summary = tf.summary.scalar('Latent_loss_scalar_summary', tf.reshape(self._lamb_latent * tf.reduce_mean(latent_loss), []))
                 kl_scalar_summary = tf.summary.scalar('KL_scalar_summary', self._beta * kl)
                 l2_loss_scalar_summary = tf.summary.scalar('L2_scalar_summary', self._lamb_l2 * l2_loss)
-                total_loss_scalar_summary = tf.summary.scalar('Total_loss_scalar_summary', self._loss)
-                writer.add_summary(summary)
-                """
+                total_loss_scalar_summary = tf.summary.scalar('Total_loss_scalar_summary', tf.reshape(self._loss, []))
+            self.loss_summary = tf.summary.merge([rating_loss_scalar_summary,
+                                                  keyphrase_loss_scalar_summary,
+                                                  latent_loss_scalar_summary,
+                                                  kl_scalar_summary,
+                                                  l2_loss_scalar_summary,
+                                                  total_loss_scalar_summary])
+            """
 
             with tf.variable_scope('optimizer'):
                 optimizer = self._optimizer(learning_rate=self._learning_rate)
@@ -232,6 +238,10 @@ class E_CDE_VAE(object):
                              self.corruption: corruption,
                              self.sampling: True}
 
+                """
+                training, loss, loss_summary = self.sess.run([self._train, self._loss, self.loss_summary], feed_dict=feed_dict)
+                self.writer.add_summary(loss_summary, i)
+                """
                 training, loss = self.sess.run([self._train, self._loss], feed_dict=feed_dict)
                 pbar.set_description("loss:{}".format(loss))
 
