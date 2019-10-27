@@ -53,9 +53,8 @@ def hyper_parameter_tuning(train, validation, keyphrase_train, keyphrase_validat
                                                     continue
 
                                                 format = "model: {}, rank: {}, beta: {}, lambda_l2: {}, " \
-                                                    "lamb_keyphrase: {}, lamb_latent: {}, lamb_rating: {}, " \
-                                                    "learning_rate: {}, epoch: {}, " \
-                                                    "corruption: {}, optimizer: {}"
+                                                    "lambda_keyphrase: {}, lambda_latent: {}, lambda_rating: {}, " \
+                                                    "learning_rate: {}, epoch: {}, corruption: {}, optimizer: {}"
                                                 progress.section(format.format(algorithm,
                                                                                rank,
                                                                                beta,
