@@ -260,7 +260,7 @@ class E_CDE_VAE(object):
 
 
 def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0)),
-              epoch=100, lamb_l2=80, lamb_keyphrase=1, lamb_latent=5, lamb_rating=1,
+              epoch=100, lamb_l2=80.0, lamb_keyphrase=1.0, lamb_latent=5.0, lamb_rating=1.0,
               beta=0.2, learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train
