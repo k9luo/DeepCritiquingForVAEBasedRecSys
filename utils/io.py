@@ -28,6 +28,7 @@ def find_best_hyperparameters(folder_path, metric):
     best_settings = []
     for record in csv_files:
         df = pd.read_csv(record)
+        df = df.loc[df['lambda_latent'] == df['lambda_keyphrase']]
         df[metric+'_Score'] = df[metric].map(lambda x: ast.literal_eval(x)[0])
         best_settings.append(df.loc[df[metric+'_Score'].idxmax()].to_dict())
 
