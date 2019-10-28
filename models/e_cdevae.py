@@ -38,6 +38,8 @@ class E_CDE_VAE(object):
         self._build_graph()
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
+        # print([n.name for n in tf.get_default_graph().as_graph_def().node])
+#        self.writer = tf.summary.FileWriter('./graphs', self.sess.graph)
 
     def _build_graph(self):
 
@@ -111,16 +113,14 @@ class E_CDE_VAE(object):
                     latent_loss = tf.losses.mean_squared_error(labels=latent,
                                                                predictions=reconstructed_latent)
 
-                """
                 # For rating loss, we can also try sigmoid cross-entropy loss.
                 with tf.variable_scope("rating_decoder_reconstruction_loss"):
                     rating_loss = tf.losses.mean_squared_error(labels=self.rating_input,
-                                                                predictions=self.rating_prediction)
+                                                               predictions=self.rating_prediction)
 
                 with tf.variable_scope("keyphrase_decoder_reconstruction_loss"):
                     keyphrase_loss = tf.losses.mean_squared_error(labels=self.keyphrase_input,
                                                                   predictions=self.keyphrase_prediction)
-                """
 
                 if self._observation_distribution == 'Gaussian':
                     with tf.variable_scope('gaussian'):
@@ -138,7 +138,7 @@ class E_CDE_VAE(object):
                 with tf.variable_scope('l2'):
                     l2_loss = tf.losses.get_regularization_loss()
 
-                # TODO Loss function Tuning
+                """
                 self._loss = (self._lamb_rating * rating_obj
                               + self._lamb_keyphrase * keyphrase_obj
                               + self._lamb_latent * tf.reduce_mean(latent_loss)
@@ -153,7 +153,22 @@ class E_CDE_VAE(object):
                               + self._beta * kl
                               + self._lamb_l2 * l2_loss
                               )
-                """
+
+            """
+            with tf.name_scope('loss-for-tensorboard'):
+                rating_loss_scalar_summary = tf.summary.scalar('Rating_loss_scalar_summary', tf.reshape(self._lamb_rating * tf.reduce_mean(rating_loss), []))
+                keyphrase_loss_scalar_summary = tf.summary.scalar('Keyphrase_loss_scalar_summary', tf.reshape(self._lamb_keyphrase * tf.reduce_mean(keyphrase_loss), []))
+                latent_loss_scalar_summary = tf.summary.scalar('Latent_loss_scalar_summary', tf.reshape(self._lamb_latent * tf.reduce_mean(latent_loss), []))
+                kl_scalar_summary = tf.summary.scalar('KL_scalar_summary', self._beta * kl)
+                l2_loss_scalar_summary = tf.summary.scalar('L2_scalar_summary', self._lamb_l2 * l2_loss)
+                total_loss_scalar_summary = tf.summary.scalar('Total_loss_scalar_summary', tf.reshape(self._loss, []))
+            self.loss_summary = tf.summary.merge([rating_loss_scalar_summary,
+                                                  keyphrase_loss_scalar_summary,
+                                                  latent_loss_scalar_summary,
+                                                  kl_scalar_summary,
+                                                  l2_loss_scalar_summary,
+                                                  total_loss_scalar_summary])
+            """
 
             with tf.variable_scope('optimizer'):
                 optimizer = self._optimizer(learning_rate=self._learning_rate)
@@ -199,7 +214,7 @@ class E_CDE_VAE(object):
 
         return gaussian_parameters
 
-    def refined_predict(self, rating_input, critiqued):
+    def refine_predict(self, rating_input, critiqued):
         modified_rating, modified_keyphrases = self.sess.run([self.modified_rating_prediction,
                                                               self.modified_keyphrase_prediction],
                                                              feed_dict={self.rating_input: rating_input,
@@ -223,6 +238,10 @@ class E_CDE_VAE(object):
                              self.corruption: corruption,
                              self.sampling: True}
 
+                """
+                training, loss, loss_summary = self.sess.run([self._train, self._loss, self.loss_summary], feed_dict=feed_dict)
+                self.writer.add_summary(loss_summary, i)
+                """
                 training, loss = self.sess.run([self._train, self._loss], feed_dict=feed_dict)
                 pbar.set_description("loss:{}".format(loss))
 
@@ -241,7 +260,7 @@ class E_CDE_VAE(object):
 
 
 def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0)),
-              epoch=100, lamb_l2=80, lamb_keyphrase=1, lamb_latent=5, lamb_rating=1,
+              epoch=100, lamb_l2=80.0, lamb_keyphrase=1.0, lamb_latent=5.0, lamb_rating=1.0,
               beta=0.2, learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train

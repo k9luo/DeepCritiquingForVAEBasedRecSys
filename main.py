@@ -36,7 +36,6 @@ def main(args):
     print("Predict Batch Size: {}".format(args.predict_batch_size))
     print("Evaluation Ranking Topk: {}".format(args.topk))
     print("Validation Enabled: {}".format(args.enable_validation))
-    print("Binarize Keyphrase Frequency: {}".format(args.enable_keyphrase_binarization))
 
     # Load Data
     progress.section("Load Data")
@@ -50,27 +49,17 @@ def main(args):
 
     if args.enable_validation:
         R_valid = load_numpy(path=args.data_dir, name=args.valid_set)
-        R_valid_keyphrase = load_numpy(path=args.data_dir, name=args.valid_keyphrase_set).toarray()
+        R_valid_keyphrase = load_numpy(path=args.data_dir, name=args.valid_keyphrase_set)
     else:
         R_valid = load_numpy(path=args.data_dir, name=args.test_set)
-        R_valid_keyphrase = load_numpy(path=args.data_dir, name=args.test_keyphrase_set).toarray()
+        R_valid_keyphrase = load_numpy(path=args.data_dir, name=args.test_keyphrase_set)
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
 
     progress.section("Preprocess Keyphrase Frequency")
     start_time = time.time()
 
-    if args.enable_keyphrase_binarization:
-        R_train_keyphrase[R_train_keyphrase != 0] = 1
-        R_valid_keyphrase[R_valid_keyphrase != 0] = 1
-    else:
-        R_train_keyphrase = R_train_keyphrase/R_train_keyphrase.sum(axis=1, keepdims=True)
-        R_valid_keyphrase = R_valid_keyphrase/R_valid_keyphrase.sum(axis=1, keepdims=True)
-
-        R_train_keyphrase[np.isnan(R_train_keyphrase)] = 0
-        R_valid_keyphrase[np.isnan(R_valid_keyphrase)] = 0
-
-#    import ipdb; ipdb.set_trace()
-
+    R_train_keyphrase[R_train_keyphrase != 0] = 1
+    R_valid_keyphrase[R_valid_keyphrase != 0] = 1
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
 
     progress.section("Train")
@@ -97,6 +86,7 @@ def main(args):
 
         metric_names = ['R-Precision', 'NDCG', 'Clicks', 'Recall', 'Precision', 'MAP']
         result = evaluate(prediction, R_valid, metric_names, [args.topk])
+
         print("-")
         for metric in result.keys():
             print("{}:{}".format(metric, result[metric]))
@@ -104,6 +94,7 @@ def main(args):
         if keyphrase_score is not None:
             keyphrase_prediction = predict_keyphrase(keyphrase_score, args.topk)
             keyphrase_result = evaluate(keyphrase_prediction, sparse.csr_matrix(R_valid_keyphrase), metric_names, [args.topk])
+
             print("-")
             for metric in keyphrase_result.keys():
                 print("{}:{}".format(metric, keyphrase_result[metric]))
@@ -164,11 +155,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', dest='model', default="CDE-VAE",
                         help='Model currently using. (default: %(default)s)')
 
-    parser.add_argument('--normalize_keyphrase_frequency', dest='enable_keyphrase_binarization',
-                        action='store_false',
-                        help='Boolean flag indicating if keyphrase frequency is binarized.')
-
-    parser.add_argument('--optimizer', dest='optimizer', default="RMSProp",
+    parser.add_argument('--optimizer', dest='optimizer', default="Adam",
                         help='Optimizer currently using. (default: %(default)s)')
 
     parser.add_argument('--predict_batch_size', dest='predict_batch_size', default=128,
