@@ -21,7 +21,7 @@ def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set,
     keyphrase_redistribute_score = keyphrase_ratio * rating_difference
     explanation += keyphrase_redistribute_score
 
-    modified_rating, modified_explanation = model.refine_predict(rating, explanation)
+    modified_rating, modified_explanation = model.refine_predict(train_set[user_index].todense(), explanation)
 
     return np.argsort(rating.flatten())[::-1], np.argsort(modified_rating.flatten())[::-1], affected_items
 
