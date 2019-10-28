@@ -214,7 +214,7 @@ class E_CDE_VAE(object):
 
         return gaussian_parameters
 
-    def refined_predict(self, rating_input, critiqued):
+    def refine_predict(self, rating_input, critiqued):
         modified_rating, modified_keyphrases = self.sess.run([self.modified_rating_prediction,
                                                               self.modified_keyphrase_prediction],
                                                              feed_dict={self.rating_input: rating_input,
