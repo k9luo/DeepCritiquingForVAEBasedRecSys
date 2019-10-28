@@ -49,7 +49,7 @@ def hyper_parameter_tuning(train, validation, keyphrase_train, keyphrase_validat
                                                     (df['learning_rate'] == learning_rate) &
                                                     (df['epoch'] == epoch) &
                                                     (df['corruption'] == corruption) &
-                                                    (df['optimizer'] == optimizer)).any():
+                                                    (df['optimizer'] == optimizer)).any() or (lamb_latent != lamb_keyphrase):
                                                     continue
 
                                                 format = "model: {}, rank: {}, beta: {}, lambda_l2: {}, " \
