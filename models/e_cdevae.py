@@ -83,10 +83,14 @@ class E_CDE_VAE(object):
                 self.rating_prediction = rating_prediction
                 self.keyphrase_prediction = keyphrase_prediction
 
+            with tf.variable_scope('l2'):
+                    l2_loss = tf.losses.get_regularization_loss()
             # looping with keyphrase
             with tf.variable_scope("looping"):
-                reconstructed_latent = tf.layers.dense(inputs=self.keyphrase_prediction, units=self._latent_dim*2,
-                                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb_l2),
+                self.keyphrase_prediction_freeze = tf.stop_gradient(self.keyphrase_prediction)
+                
+                ##kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self._lamb_l2),
+                reconstructed_latent = tf.layers.dense(inputs=self.keyphrase_prediction_freeze, units=self._latent_dim*2,
                                                        activation=None, name='latent_reconstruction', reuse=False)
 
                 modified_latent = tf.layers.dense(inputs=self.modified_keyphrase, units=self._latent_dim*2,
@@ -135,24 +139,12 @@ class E_CDE_VAE(object):
                         rating_obj = self._multinomial_log_likelihood(self.rating_input, self.rating_prediction)
                         keyphrase_obj = self._multinomial_log_likelihood(self.keyphrase_input, self.keyphrase_prediction)
 
-                with tf.variable_scope('l2'):
-                    l2_loss = tf.losses.get_regularization_loss()
-
-                """
-                self._loss = (self._lamb_rating * rating_obj
-                              + self._lamb_keyphrase * keyphrase_obj
-                              + self._lamb_latent * tf.reduce_mean(latent_loss)
-                              + self._beta * kl
-                              + self._lamb_l2 * l2_loss
-                              )
-
-                """
                 self._loss = (self._lamb_rating * tf.reduce_mean(rating_loss)
                               + self._lamb_keyphrase * tf.reduce_mean(keyphrase_loss)
-                              + self._lamb_latent * tf.reduce_mean(latent_loss)
                               + self._beta * kl
                               + self._lamb_l2 * l2_loss
                               )
+                self._latent_loss = tf.reduce_mean(latent_loss)
 
             """
             with tf.name_scope('loss-for-tensorboard'):
@@ -172,9 +164,11 @@ class E_CDE_VAE(object):
 
             with tf.variable_scope('optimizer'):
                 optimizer = self._optimizer(learning_rate=self._learning_rate)
+                latent_optimizer = self._optimizer(learning_rate=self._learning_rate)
 
             with tf.variable_scope('training-step'):
                 self._train = optimizer.minimize(self._loss)
+                self._train_latent = latent_optimizer.minimize(self._latent_loss)
 
     @staticmethod
     def _kl_diagnormal_stdnormal(mu, log_std):
@@ -245,6 +239,26 @@ class E_CDE_VAE(object):
                 training, loss = self.sess.run([self._train, self._loss], feed_dict=feed_dict)
                 pbar.set_description("loss:{}".format(loss))
 
+    def train_latent(self, rating_matrix, keyphrase_matrix, corruption, epoch=100, batches=None, **unused):
+        if batches is None:
+            batches = self.get_batches(rating_matrix, self._batch_size)
+            batches_keyphrase = self.get_batches(keyphrase_matrix, self._batch_size)
+        # Training
+        pbar = tqdm(range(epoch))
+        for i in pbar:
+            for step in range(len(batches)):
+                feed_dict = {self.rating_input: batches[step].todense(),
+                             self.keyphrase_input:batches_keyphrase[step],
+                             self.corruption: corruption,
+                             self.sampling: True}
+
+                """
+                training, loss, loss_summary = self.sess.run([self._train, self._loss, self.loss_summary], feed_dict=feed_dict)
+                self.writer.add_summary(loss_summary, i)
+                """
+                training, loss = self.sess.run([self._train_latent, self._latent_loss], feed_dict=feed_dict)
+                pbar.set_description("loss:{}".format(loss))
+
     def get_batches(self, matrix, batch_size):
         remaining_size = matrix.shape[0]
         batch_index = 0
@@ -275,6 +289,7 @@ def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0))
                       observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
 
     model.train_model(matrix_input, matrix_input_keyphrase, corruption, epoch)
+    model.train_latent(matrix_input, matrix_input_keyphrase, corruption, epoch)
 
     return model
 
