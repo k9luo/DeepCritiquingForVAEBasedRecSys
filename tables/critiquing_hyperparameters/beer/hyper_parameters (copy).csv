@@ -1,2 +1,0 @@
-model,rank,beta,lambda_l2,lambda_keyphrase,lambda_latent,lambda_rating,learning_rate,epoch,corruption,optimizer
-E-CDE-VAE,100,1,0.001,1,1,1,0.0005,600,0.4,Adam

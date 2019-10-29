@@ -1,0 +1,5 @@
+python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap/CDsVinyl_Critiquing1"
+python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap/CDsVinyl_Critiquing2"
+python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap/CDsVinyl_Critiquing3"
+python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap/CDsVinyl_Critiquing4"
+python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap/CDsVinyl_Critiquing5"
