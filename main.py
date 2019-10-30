@@ -71,21 +71,14 @@ def main(args):
                                learning_rate=args.learning_rate, rank=args.rank,
                                corruption=args.corruption, optimizer=args.optimizer,
                                matrix_train_keyphrase=R_train_keyphrase)
-    train_run_time = time.time() - start_time
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
 
     progress.section("Predict")
     start_time = time.time()
 
     rating_score, keyphrase_score = model.predict(R_train.todense())
-    test_run_time = time.time() - start_time
     prediction = predict(rating_score, args.topk, matrix_Train=R_train)
     print("Elapsed: {}".format(inhour(time.time() - start_time)))
-    import pandas as pd
-    from utils.io import save_dataframe_csv
-    run_time_results = pd.DataFrame([{'Algorithm': args.model, 'Train Time': train_run_time, 'Test Time': test_run_time}])
-    import ipdb; ipdb.set_trace()
-    save_dataframe_csv(run_time_results, table_path='tables/beer/beer_runtime/', save_path='beer_runtime1.csv')
 
     if args.enable_evaluation:
         progress.section("Create Metrics")
