@@ -14,12 +14,16 @@ def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set,
     # Get all affected items
     affected_items = item_keyphrase_train_set[keyphrase_index].nonzero()[1]
 
+    """
     # Redistribute keyphrase prediction score
     rating_difference = explanation[0][keyphrase_index]
     explanation[0][keyphrase_index] = 0
     keyphrase_ratio = explanation / sum(explanation[0])
     keyphrase_redistribute_score = keyphrase_ratio * rating_difference
     explanation += keyphrase_redistribute_score
+    """
+
+    explanation[0][keyphrase_index] = min(explanation[0])
 
     modified_rating, modified_explanation = model.refine_predict(train_set[user_index].todense(), explanation)
 
