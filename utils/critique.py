@@ -19,17 +19,14 @@ def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set,
     # Get all affected items
 #    affected_items = item_keyphrase_train_set[keyphrase_index].nonzero()[1]
 
-    """
     # Redistribute keyphrase prediction score
     rating_difference = explanation[0][keyphrase_index]
     explanation[0][keyphrase_index] = 0
     keyphrase_ratio = explanation / sum(explanation[0])
     keyphrase_redistribute_score = keyphrase_ratio * rating_difference
     explanation += keyphrase_redistribute_score
-    """
 
-    explanation[0][keyphrase_index] = min(explanation[0])
-#    explanation[0][keyphrase_index] = -1
+#    explanation[0][keyphrase_index] = min(explanation[0])
 
 
     for t in range(4):
@@ -39,15 +36,21 @@ def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set,
 
 
         explanation_rank_list = np.argsort(-modified_explanation[0])[:topk_keyphrase]
-#        import ipdb; ipdb.set_trace()
         explanation_rank_list = np.setdiff1d(explanation_rank_list, keyphrase_index)
         critiqued_keyphrase_index = int(np.random.choice(explanation_rank_list, 1)[0])
         keyphrase_index = np.append(keyphrase_index, critiqued_keyphrase_index)
 #        print(keyphrase_index)
         keyphrase_index = np.unique(keyphrase_index)
         affected_items = item_keyphrase_train_set[keyphrase_index].nonzero()[1]
-        modified_explanation[0][keyphrase_index] = min(modified_explanation[0])
-#        modified_explanation[0][keyphrase_index] = -1
+
+#        import ipdb; ipdb.set_trace()
+        rating_difference = sum(modified_explanation[0][keyphrase_index])
+        modified_explanation[0][keyphrase_index] = 0
+        keyphrase_ratio = modified_explanation / sum(modified_explanation[0])
+        keyphrase_redistribute_score = keyphrase_ratio * rating_difference
+        modified_explanation += keyphrase_redistribute_score
+        explanation = modified_explanation
+
 
         explanation = modified_explanation
 
