@@ -301,7 +301,7 @@ def s_e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0
                       observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
 
     model.train_rating(matrix_input, matrix_input_keyphrase, corruption, epoch)
-    #model.train_keyphrase(matrix_input, matrix_input_keyphrase, corruption, epoch)
+    model.train_keyphrase(matrix_input, matrix_input_keyphrase, corruption, epoch)
 
     return model
 
