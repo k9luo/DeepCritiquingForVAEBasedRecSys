@@ -1,5 +1,5 @@
-from evaluation.general_performance import evaluate
-from prediction.predictor import predict
+from evaluation.general_performance import evaluate, evaluate_explanation
+from prediction.predictor import predict, predict_keyphrase
 from utils.io import load_dataframe_csv, save_dataframe_csv, load_yaml, find_best_hyperparameters
 from utils.modelnames import models
 from utils.progress import WorkSplitter
@@ -64,12 +64,12 @@ def general(train, test, keyphrase_train, keyphrase_test, params, save_path, fin
 
         if final_explanation:
             prediction = predict_keyphrase(keyphrase_score,
-                                           topK=row['topK'][-1])
+                                           topK=row['topK'][-2])
 
-            result = evaluate(prediction,
-                              keyphrase_test,
-                              row['metric'],
-                              row['topK'])
+            result = evaluate_explanation(prediction,
+                                          keyphrase_test,
+                                          row['metric'],
+                                          row['topK'])
         else:
             prediction = predict(rating_score,
                                  topK=row['topK'][-1],
