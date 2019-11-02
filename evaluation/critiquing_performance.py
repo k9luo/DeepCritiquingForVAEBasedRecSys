@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-def critiquing_evaluation(train_set, keyphrase_train_set, item_keyphrase_train_set, model, model_name, num_users, num_items, num_users_sampled, topk):
+def critiquing_evaluation(train_set, keyphrase_train_set, item_keyphrase_train_set, model, model_name, num_users, num_items, num_users_sampled, critiquing_function, topk):
     fmap_results = [[] for _ in topk]
     sampled_users = np.random.choice(num_users, num_users_sampled)
     for user in tqdm(sampled_users):
@@ -16,6 +16,7 @@ def critiquing_evaluation(train_set, keyphrase_train_set, item_keyphrase_train_s
                                                                                                  model,
                                                                                                  user,
                                                                                                  num_items,
+                                                                                                 critiquing_function,
                                                                                                  topk_keyphrase=10)
 
         all_items = np.array(range(num_items))

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set, model, user_index, num_items, topk_keyphrase=10):
+def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set, model, user_index, num_items, critiquing_function, topk_keyphrase=10):
     # Get rating and explanation prediction for the given user and all item pairs
     rating, explanation = model.predict(train_set[user_index].todense())
 
@@ -14,12 +14,20 @@ def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set,
     # Get all affected items
     affected_items = item_keyphrase_train_set[keyphrase_index].nonzero()[1]
 
-    # Redistribute keyphrase prediction score
-    rating_difference = explanation[0][keyphrase_index]
-    explanation[0][keyphrase_index] = 0
-    keyphrase_ratio = explanation / sum(explanation[0])
-    keyphrase_redistribute_score = keyphrase_ratio * rating_difference
-    explanation += keyphrase_redistribute_score
+    if critiquing_function == 'upper_bound':
+        return np.argsort(rating.flatten())[::-1], np.append(np.delete(np.argsort(rating.flatten())[::-1], affected_items), affected_items), affected_items
+
+    if critiquing_function == 'energy_redistribution':
+        # Redistribute keyphrase prediction score
+        rating_difference = explanation[0][keyphrase_index]
+        explanation[0][keyphrase_index] = 0
+        keyphrase_ratio = explanation / sum(explanation[0])
+        keyphrase_redistribute_score = keyphrase_ratio * rating_difference
+        explanation += keyphrase_redistribute_score
+    elif critiquing_function == 'zero_out':
+        explanation[0][keyphrase_index] = min(explanation[0])
+    else:
+        raise ValueError("The given critiquing function is not implemented!")
 
     modified_rating, modified_explanation = model.refine_predict(train_set[user_index].todense(), explanation)
 
