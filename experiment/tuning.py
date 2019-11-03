@@ -15,7 +15,7 @@ def hyper_parameter_tuning(train, validation, keyphrase_train, keyphrase_validat
     try:
         df = load_dataframe_csv(table_path, save_path)
     except:
-        df = pd.DataFrame(columns=['model', 'rank', 'beta', 'lambda_l2', 'lambda_keyphrase', 'lambda_latent', 'lambda_rating', 'topK', 'learning_rate', 'epoch', 'corruption', 'optimizer'])
+        df = pd.DataFrame(columns=['model', 'rank', 'beta', 'lambda_l2', 'lambda_keyphrase', 'lambda_latent', 'lambda_rating', 'topK', 'learning_rate', 'epoch_rating', 'epoch_explanation', 'corruption', 'optimizer'])
 
     for algorithm in params['models']:
 
@@ -33,99 +33,105 @@ def hyper_parameter_tuning(train, validation, keyphrase_train, keyphrase_validat
 
                                 for learning_rate in params['learning_rate']:
 
-                                    for epoch in params['epoch']:
+                                    for epoch_rating in params['epoch_rating']:
 
-                                        for corruption in params['corruption']:
+                                        for epoch_exp in params['epoch_explanation']:
 
-                                            for optimizer in params['optimizer']:
+                                            for corruption in params['corruption']:
 
-                                                if ((df['model'] == algorithm) &
-                                                    (df['rank'] == rank) &
-                                                    (df['beta'] == beta) &
-                                                    (df['lambda_l2'] == lamb_l2) &
-                                                    (df['lambda_keyphrase'] == lamb_keyphrase) &
-                                                    (df['lambda_latent'] == lamb_latent) &
-                                                    (df['lambda_rating'] == lamb_rating) &
-                                                    (df['learning_rate'] == learning_rate) &
-                                                    (df['epoch'] == epoch) &
-                                                    (df['corruption'] == corruption) &
-                                                    (df['optimizer'] == optimizer)).any() or (lamb_latent != lamb_keyphrase):
-                                                    continue
+                                                for optimizer in params['optimizer']:
 
-                                                format = "model: {}, rank: {}, beta: {}, lambda_l2: {}, " \
-                                                    "lambda_keyphrase: {}, lambda_latent: {}, lambda_rating: {}, " \
-                                                    "learning_rate: {}, epoch: {}, corruption: {}, optimizer: {}"
-                                                progress.section(format.format(algorithm,
-                                                                               rank,
-                                                                               beta,
-                                                                               lamb_l2,
-                                                                               lamb_keyphrase,
-                                                                               lamb_latent,
-                                                                               lamb_rating,
-                                                                               learning_rate,
-                                                                               epoch,
-                                                                               corruption,
-                                                                               optimizer))
+                                                    if ((df['model'] == algorithm) &
+                                                        (df['rank'] == rank) &
+                                                        (df['beta'] == beta) &
+                                                        (df['lambda_l2'] == lamb_l2) &
+                                                        (df['lambda_keyphrase'] == lamb_keyphrase) &
+                                                        (df['lambda_latent'] == lamb_latent) &
+                                                        (df['lambda_rating'] == lamb_rating) &
+                                                        (df['learning_rate'] == learning_rate) &
+                                                        (df['epoch_rating'] == epoch_rating) &
+                                                        (df['epoch_explanation'] == epoch_exp) &
+                                                        (df['corruption'] == corruption) &
+                                                        (df['optimizer'] == optimizer)).any():
+                                                        continue
 
-                                                progress.subsection("Training")
+                                                    format = "model: {}, rank: {}, beta: {}, lambda_l2: {}, " \
+                                                        "lambda_keyphrase: {}, lambda_latent: {}, lambda_rating: {}, " \
+                                                        "learning_rate: {}, epoch_rating: {}, epoch_exp: {}, corruption: {}, optimizer: {}"
+                                                    progress.section(format.format(algorithm,
+                                                                                rank,
+                                                                                beta,
+                                                                                lamb_l2,
+                                                                                lamb_keyphrase,
+                                                                                lamb_latent,
+                                                                                lamb_rating,
+                                                                                learning_rate,
+                                                                                epoch_rating,
+                                                                                epoch_exp,
+                                                                                corruption,
+                                                                                optimizer))
 
-                                                model = models[algorithm](matrix_train=train,
-                                                                          epoch=epoch,
-                                                                          lamb_l2=lamb_l2,
-                                                                          lamb_keyphrase=lamb_keyphrase,
-                                                                          lamb_latent=lamb_latent,
-                                                                          lamb_rating=lamb_rating,
-                                                                          beta=beta,
-                                                                          learning_rate=learning_rate,
-                                                                          rank=rank,
-                                                                          corruption=corruption,
-                                                                          optimizer=optimizer,
-                                                                          matrix_train_keyphrase=keyphrase_train)
+                                                    progress.subsection("Training")
 
-                                                progress.subsection("Prediction")
+                                                    model = models[algorithm](matrix_train=train,
+                                                                            epoch_rating=epoch_rating,
+                                                                            epoch_exp=epoch_exp,
+                                                                            lamb_l2=lamb_l2,
+                                                                            lamb_keyphrase=lamb_keyphrase,
+                                                                            lamb_latent=lamb_latent,
+                                                                            lamb_rating=lamb_rating,
+                                                                            beta=beta,
+                                                                            learning_rate=learning_rate,
+                                                                            rank=rank,
+                                                                            corruption=corruption,
+                                                                            optimizer=optimizer,
+                                                                            matrix_train_keyphrase=keyphrase_train)
 
-                                                rating_score, keyphrase_score = model.predict(train.todense())
+                                                    progress.subsection("Prediction")
 
-                                                progress.subsection("Evaluation")
+                                                    rating_score, keyphrase_score = model.predict(train.todense())
 
-                                                if tune_explanation:
-                                                    prediction = predict_keyphrase(keyphrase_score,
-                                                                                   topK=params['topK'][-1])
+                                                    progress.subsection("Evaluation")
 
-                                                    result = evaluate(prediction,
-                                                                      keyphrase_validation,
-                                                                      params['metric'],
-                                                                      params['topK'])
-                                                else:
-                                                    prediction = predict(rating_score,
-                                                                         topK=params['topK'][-1],
-                                                                         matrix_Train=train)
+                                                    if tune_explanation:
+                                                        prediction = predict_keyphrase(keyphrase_score,
+                                                                                    topK=params['topK'][-1])
 
-                                                    result = evaluate(prediction,
-                                                                      validation,
-                                                                      params['metric'],
-                                                                      params['topK'])
+                                                        result = evaluate(prediction,
+                                                                        keyphrase_validation,
+                                                                        params['metric'],
+                                                                        params['topK'])
+                                                    else:
+                                                        prediction = predict(rating_score,
+                                                                            topK=params['topK'][-1],
+                                                                            matrix_Train=train)
 
-                                                result_dict = {'model': algorithm,
-                                                               'rank': rank,
-                                                               'beta': beta,
-                                                               'lambda_l2': lamb_l2,
-                                                               'lambda_keyphrase': lamb_keyphrase,
-                                                               'lambda_latent': lamb_latent,
-                                                               'lambda_rating': lamb_rating,
-                                                               'learning_rate': learning_rate,
-                                                               'epoch': epoch,
-                                                               'corruption': corruption,
-                                                               'optimizer': optimizer}
+                                                        result = evaluate(prediction,
+                                                                        validation,
+                                                                        params['metric'],
+                                                                        params['topK'])
 
-                                                for name in result.keys():
-                                                    result_dict[name] = [round(result[name][0], 4),
-                                                                         round(result[name][1], 4)]
+                                                    result_dict = {'model': algorithm,
+                                                                'rank': rank,
+                                                                'beta': beta,
+                                                                'lambda_l2': lamb_l2,
+                                                                'lambda_keyphrase': lamb_keyphrase,
+                                                                'lambda_latent': lamb_latent,
+                                                                'lambda_rating': lamb_rating,
+                                                                'learning_rate': learning_rate,
+                                                                'epoch_rating': epoch_rating,
+                                                                'epoch_explanation':epoch_exp,
+                                                                'corruption': corruption,
+                                                                'optimizer': optimizer}
 
-                                                df = df.append(result_dict, ignore_index=True)
+                                                    for name in result.keys():
+                                                        result_dict[name] = [round(result[name][0], 4),
+                                                                            round(result[name][1], 4)]
 
-                                                model.sess.close()
-                                                tf.reset_default_graph()
+                                                    df = df.append(result_dict, ignore_index=True)
 
-                                                save_dataframe_csv(df, table_path, save_path)
+                                                    model.sess.close()
+                                                    tf.reset_default_graph()
+
+                                                    save_dataframe_csv(df, table_path, save_path)
 
