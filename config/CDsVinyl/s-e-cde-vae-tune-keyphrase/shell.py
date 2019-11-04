@@ -17,6 +17,6 @@ for ee in epoch_explanation:
         f.write("    optimizer: [Adam]\n")
         f.write("    learning_rate: [0.0001]\n")
         f.write("    corruption: [0.4]\n")
-        f.write("    topK: [5, 10, 15, 20, 50]\n")
+        f.write("    topK: [5, 10, 15, 20]\n")
         f.write("    rank: [200]\n")
         f.write("    metric: [R-Precision, NDCG, Precision, Recall, MAP]\n")
