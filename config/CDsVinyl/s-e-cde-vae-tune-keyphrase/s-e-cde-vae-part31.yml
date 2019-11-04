@@ -1,10 +1,10 @@
 parameters:
 	epoch_rating: [400]
-	epoch_explanation: [300]
+	epoch_explanation: [700]
 	beta: [0.0001]
 	lambda_l2: [0.0001]
 	lambda_keyphrase: [1.0]
-	labmda_latent: [2.0]
+	labmda_latent: [0.5]
 	lambda_rating: [1.0]
 	optimizer: [Adam]
 	learning_rate: [0.0001]
