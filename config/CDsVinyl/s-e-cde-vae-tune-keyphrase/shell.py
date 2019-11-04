@@ -6,6 +6,8 @@ for ee in epoch_explanation:
         i +=1
         f= open("./s-e-cde-vae-part"+str(i)+".yml","w")
         f.write("parameters:\n")
+        f.write("    models: S-E-CDE-VAE\n")
+        f.write("    epoch_rating: [400]\n")
         f.write("    epoch_rating: [400]\n")
         f.write("    epoch_explanation: [{0}]\n".format(ee))
         f.write("    beta: [0.0001]\n")

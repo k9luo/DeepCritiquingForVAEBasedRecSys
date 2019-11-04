@@ -1,4 +1,6 @@
 parameters:
+    models: S-E-CDE-VAE
+    epoch_rating: [400]
     epoch_rating: [400]
     epoch_explanation: [600]
     beta: [0.0001]
