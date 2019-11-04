@@ -12,7 +12,7 @@ for ee in epoch_explanation:
         f.write("    beta: [0.0001]\n")
         f.write("    lambda_l2: [0.0001]\n")
         f.write("    lambda_keyphrase: [1.0]\n")
-        f.write("    labmda_latent: [{0}]\n".format(ll))
+        f.write("    lambda_latent: [{0}]\n".format(ll))
         f.write("    lambda_rating: [1.0]\n")
         f.write("    optimizer: [Adam]\n")
         f.write("    learning_rate: [0.0001]\n")
