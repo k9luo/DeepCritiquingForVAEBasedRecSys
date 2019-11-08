@@ -16,7 +16,7 @@ def general(train, test, keyphrase_train, keyphrase_test, params, save_path, fin
     try:
         output_df = load_dataframe_csv(table_path, save_path)
     except:
-        output_df = pd.DataFrame(columns=['model', 'rank', 'beta', 'lambda_l2', 'lambda_keyphrase', 'lambda_latent', 'lambda_rating', 'topK', 'learning_rate', 'epoch', 'corruption', 'optimizer'])
+        output_df = pd.DataFrame(columns=['model', 'rank', 'beta', 'lambda_l2', 'lambda_keyphrase', 'lambda_latent', 'lambda_rating', 'topK', 'learning_rate', 'epoch_rating', 'epoch_explanation','corruption', 'optimizer'])
 
     for index, row in df.iterrows():
 
@@ -28,23 +28,25 @@ def general(train, test, keyphrase_train, keyphrase_test, params, save_path, fin
         lamb_latent = row['lambda_latent']
         lamb_rating = row['lambda_rating']
         learning_rate = row['learning_rate']
-        epoch = row['epoch']
+        epoch_rating = row['epoch_rating']
+        epoch_explanation = row['epoch_explanation']
         corruption = row['corruption']
         optimizer = row['optimizer']
 
-        row['topK'] = [5, 10, 15, 20, 50]
+        row['topK'] = [5, 10, 15, 20]
         row['metric'] = ['R-Precision', 'NDCG', 'Clicks', 'Recall', 'Precision', 'MAP']
 
         format = "model: {}, rank: {}, beta: {}, lambda_l2: {}, lambda_keyphrase: {}, " \
                  "lambda_latent: {}, lambda_rating: {}, learning_rate: {}, " \
-                 "epoch: {}, corruption: {}, optimizer: {}"
+                 "epoch_rating: {}, epoch_explanation: {}, corruption: {}, optimizer: {}"
 
-        progress.section(format.format(algorithm, rank, beta, lamb_l2, lamb_keyphrase, lamb_latent, lamb_rating, learning_rate, epoch, corruption, optimizer))
+        progress.section(format.format(algorithm, rank, beta, lamb_l2, lamb_keyphrase, lamb_latent, lamb_rating, learning_rate, epoch_rating,epoch_explanation, corruption, optimizer))
 
         progress.subsection("Training")
 
         model = models[algorithm](matrix_train=train,
-                                  epoch=epoch,
+                                  epoch_rating=epoch_rating,
+                                  epoch_exp=epoch_explanation,
                                   lamb_l2=lamb_l2,
                                   lamb_keyphrase=lamb_keyphrase,
                                   lamb_latent=lamb_latent,
@@ -86,7 +88,8 @@ def general(train, test, keyphrase_train, keyphrase_test, params, save_path, fin
                        'lambda_latent': lamb_latent,
                        'lambda_rating': lamb_rating,
                        'learning_rate': learning_rate,
-                       'epoch': epoch,
+                       'epoch_rating': epoch_rating,
+                       'epoch_explanation': epoch_explanation,
                        'corruption': corruption,
                        'optimizer': optimizer}
 

@@ -19,7 +19,7 @@ class S_E_CDE_VAE(object):
                  beta=0.2,
                  learning_rate=1e-4,
                  optimizer=tf.train.RMSPropOptimizer,
-                 observation_distribution="Multinomial", # or Gaussian or Bernoulli
+                 observation_distribution="Multinomial" ,# or Gaussian or Bernoulli
                  observation_std=0.01):
 
         self._lamb_l2 = lamb_l2
@@ -33,7 +33,7 @@ class S_E_CDE_VAE(object):
         self._keyphrase_dim = keyphrase_dim
         self._learning_rate = learning_rate
         self._optimizer = optimizer
-        self._observation_distribution = observation_distribution
+        self._observation_distribution = "Gaussian"
         self._observation_std = observation_std
         self._build_graph()
         #
@@ -45,6 +45,7 @@ class S_E_CDE_VAE(object):
         # print([n.name for n in tf.get_default_graph().as_graph_def().node])
 
     def _build_graph(self):
+        print(self._observation_distribution)
 
         with tf.variable_scope('vae'):
             self.rating_input = tf.placeholder(tf.float32, shape=[None, self._observation_dim])
@@ -64,6 +65,8 @@ class S_E_CDE_VAE(object):
                                           activation=None, name="Encoder_Weights")
 
             with tf.variable_scope('latent'):
+                #encoded = tf.nn.tanh(encoded)
+                self.mean = encoded[:, :self._latent_dim]
                 self.mean = tf.nn.relu(encoded[:, :self._latent_dim])
                 # TODO: Might worth trying adding tanh as activation function
                 # for variance
@@ -101,9 +104,11 @@ class S_E_CDE_VAE(object):
                                                   activation=None, name='latent_reconstruction', reuse=True)
 
                 # self.modified_mean = tf.nn.relu(modified_latent)
-                modified_latent = (self.mean + tf.nn.relu(modified_latent)) / 2.0
-                modified_mean = modified_latent
-
+                ##This is original version
+                #modified_latent = (self.mean + tf.nn.relu(modified_latent)) / 2.0
+                #modified_mean = modified_latent
+                ##This is no merge version
+                modified_mean = tf.nn.relu(modified_latent)
 
             with tf.variable_scope("rating_prediction", reuse=True):
                 rating_prediction = tf.layers.dense(inputs=modified_mean, units=self._observation_dim,
@@ -159,7 +164,8 @@ class S_E_CDE_VAE(object):
                               )
 
                 """
-                self._loss_rating = (self._lamb_rating * tf.reduce_mean(rating_loss)
+                #tf.reduce_mean(rating_loss)
+                self._loss_rating = (self._lamb_rating * rating_loss 
                               + self._beta * kl
                               + self._lamb_l2 * l2_loss_rating
                               )
@@ -183,9 +189,12 @@ class S_E_CDE_VAE(object):
                                                   l2_loss_scalar_summary,
                                                   total_loss_scalar_summary])
             """
-            with tf.name_scope('variance'):
+            
+            with tf.name_scope('summary'):
                 abs_var_summary = tf.summary.scalar('abs mean var', std_mean_abs)
-
+                #rating_loss = tf.summary.scalar('rating loss', rating_obj)
+                #klloss = tf.summary.scalar('kl', self._beta * kl)
+            
             with tf.variable_scope('optimizer'):
                 optimizer_rating = self._optimizer(learning_rate=self._learning_rate)
                 optimizer_keyphrase = self._optimizer(learning_rate=self._learning_rate)
@@ -215,7 +224,10 @@ class S_E_CDE_VAE(object):
     @staticmethod
     def _multinomial_log_likelihood(target, outputs, eps=1e-8):
         log_softmax_output = tf.nn.log_softmax(outputs)
+        print(log_softmax_output.shape)
         log_like = -tf.reduce_mean(tf.reduce_sum(log_softmax_output * target, axis=1))
+        print("ASDAS")
+        print(log_like.shape)
         return log_like
 
     def predict(self, rating_input):

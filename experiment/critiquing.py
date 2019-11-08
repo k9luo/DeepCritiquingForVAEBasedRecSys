@@ -7,7 +7,7 @@ import pandas as pd
 import tensorflow as tf
 
 
-def critiquing(train_set, keyphrase_train_set, item_keyphrase_train_set, params, num_users_sampled, load_path, save_path, critiquing_function):
+def critiquing(train_set, keyphrase_train_set, item_keyphrase_train_set, params, num_users_sampled, load_path, save_path, critiquing_function, valid_set):
     progress = WorkSplitter()
     table_path = load_yaml('config/global.yml', key='path')['tables']
     df = pd.read_csv(table_path + load_path)
@@ -27,19 +27,21 @@ def critiquing(train_set, keyphrase_train_set, item_keyphrase_train_set, params,
         lamb_latent = row['lambda_latent']
         lamb_rating = row['lambda_rating']
         learning_rate = row['learning_rate']
-        epoch = row['epoch']
+        epoch_rating = row['epoch_rating']
+        epoch_explanation = row['epoch_explanation']
         corruption = row['corruption']
         optimizer = row['optimizer']
 
         format = "model: {}, rank: {}, beta: {}, lambda_l2: {}, lambda_keyphrase: {}, " \
                  "lambda_latent: {}, lambda_rating: {}, learning_rate: {}, " \
-                 "epoch: {}, corruption: {}, optimizer: {}"
-        progress.section(format.format(algorithm, rank, beta, lamb_l2, lamb_keyphrase, lamb_latent, lamb_rating, learning_rate, epoch, corruption, optimizer))
+                 "epoch_rating: {}, epoch_explanation: {}, corruption: {}, optimizer: {}"
+        progress.section(format.format(algorithm, rank, beta, lamb_l2, lamb_keyphrase, lamb_latent, lamb_rating, learning_rate, epoch_rating,epoch_explanation, corruption, optimizer))
 
         progress.subsection("Training")
 
         model = critiquing_models[algorithm](matrix_train=train_set,
-                                             epoch=epoch,
+                                             epoch_rating=epoch_rating,
+                                             epoch_exp=epoch_explanation,
                                              lamb_l2=lamb_l2,
                                              lamb_keyphrase=lamb_keyphrase,
                                              lamb_latent=lamb_latent,
@@ -52,7 +54,7 @@ def critiquing(train_set, keyphrase_train_set, item_keyphrase_train_set, params,
                                              matrix_train_keyphrase=keyphrase_train_set)
 
         num_users, num_items = train_set.shape
-        df_fmap = critiquing_evaluation(train_set, keyphrase_train_set, item_keyphrase_train_set, model, algorithm, num_users, num_items, num_users_sampled, critiquing_function, topk=[5, 10, 20])
+        df_fmap = critiquing_evaluation(train_set, keyphrase_train_set, item_keyphrase_train_set, model, algorithm, num_users, num_items, num_users_sampled, critiquing_function, topk=[5, 10, 20], valid_set=valid_set)
 
         df_fmap['model'] = algorithm
         df_fmap['rank'] = rank
@@ -62,7 +64,8 @@ def critiquing(train_set, keyphrase_train_set, item_keyphrase_train_set, params,
         df_fmap['lambda_latent'] = lamb_latent
         df_fmap['lambda_rating'] = lamb_rating
         df_fmap['learning_rate'] = learning_rate
-        df_fmap['epoch'] = epoch
+        df_fmap['epoch_rating'] = epoch_rating
+        df_fmap['epoch_explanation'] = epoch_explanation
         df_fmap['corruption'] = corruption
         df_fmap['optimizer'] = optimizer
 

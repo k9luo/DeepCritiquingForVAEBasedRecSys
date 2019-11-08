@@ -15,6 +15,8 @@ def main(args):
     R_train_keyphrase[R_train_keyphrase != 0] = 1
     R_train_item_keyphrase = load_numpy(path=args.data_dir, name=args.train_item_keyphrase_set).T.toarray()
 
+    R_valid = load_numpy(path=args.data_dir, name=args.valid_set)
+
     num_items, num_keyphrases = R_train_item_keyphrase.shape
     for item in range(num_items):
         item_keyphrase = R_train_item_keyphrase[item]
@@ -37,7 +39,8 @@ def main(args):
                args.num_users_sampled,
                load_path=args.load_path,
                save_path=args.save_path,
-               critiquing_function=args.critiquing_function)
+               critiquing_function=args.critiquing_function,
+               valid_set = R_valid)
 
 
 if __name__ == "__main__":
@@ -55,6 +58,7 @@ if __name__ == "__main__":
                         help='Train keyphrase sparse matrix. (default: %(default)s)')
     parser.add_argument('--train_keyphrase', dest='train_keyphrase_set', default="Rtrain_keyphrase.npz",
                         help='Train keyphrase sparse matrix. (default: %(default)s)')
+    parser.add_argument('--valid', dest='valid_set', default="Rvalid.npz")
 
     args = parser.parse_args()
 
