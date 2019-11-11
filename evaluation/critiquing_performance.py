@@ -20,18 +20,20 @@ def critiquing_evaluation(train_set, keyphrase_train_set, item_keyphrase_train_s
                                                                                                  num_items,
                                                                                                  critiquing_function,
                                                                                                 topk_keyphrase=10)
-        # This is for original MAP
+        # This code is for original MAP
         # answers = user_valid
 
-        # This is for FMAP
+        # This code is for FMAP
+        training_input = train_set[user].nonzero()[1]
         all_items = np.array(range(num_items))
-        possible_items = all_items[~np.in1d(all_items, user_valid)]
+        #remove items used in training from answers
+        possible_items = all_items[~np.in1d(all_items, training_input)]
         answers = np.intersect1d(affected_items, possible_items)
 
-        # This is for falling MAP(new version)
+        # This code is for updated Falling MAP(new version)
         # answers = np.intersect1d(user_valid, affected_items)
         
-        #This is for increasing MAP(new version)
+        #This code is for increasing MAP(new version)
         # all_items = np.array(range(num_items))
         # unaffected_items = all_items[~np.in1d(all_items, affected_items)]
         # answers = np.intersect1d(unaffected_items, user_valid)

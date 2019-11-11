@@ -1,7 +1,7 @@
-python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_s.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap/S_E_CDE_VAE_OLD/CDsVinyl_Critiquing1" 
-python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_s.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap_ub/S_E_CDE_VAE_OLD/CDsVinyl_Critiquing1" --critiquing_function upper_bound
-python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_s.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap_zeroout/S_E_CDE_VAE_OLD/CDsVinyl_Critiquing1" --critiquing_function zero_out
-python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_test_0.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap_ub/S_E_CDE_VAE_OLD/LB/CDsVinyl_Critiquing1"
+python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_s.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap/S_E_CDE_VAE_OLD/CDsVinyl_Critiquing2" 
+#python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_s.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap_ub/S_E_CDE_VAE_OLD/CDsVinyl_Critiquing2" --critiquing_function upper_bound
+#python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_s.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap_zeroout/S_E_CDE_VAE_OLD/CDsVinyl_Critiquing2" --critiquing_function zero_out
+#python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_test_0.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap_ub/S_E_CDE_VAE_OLD/LB/CDsVinyl_Critiquing2"
 
 # python reproduce_critiquing.py --data_dir "data/CDsVinyl/" --load_path "critiquing_hyperparameters/CDsVinyl/hyper_parameters_s.csv" --num_users_sampled 500 --save_path "CDsVinyl_fmap_zeroout/S_E_CDE_VAE_OLD/CDsVinyl_Critiquing2" --critiquing_function zero_out
 

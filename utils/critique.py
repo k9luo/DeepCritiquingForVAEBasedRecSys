@@ -7,6 +7,7 @@ def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set,
     rating, explanation = model.predict(train_set[user_index].todense())
 
     rating = rating.flatten()
+    # prevent training input to be listed on the recommendation 
     rating[training_input] = -INF
 
     # For the given user, get top k keyphrases for that user
