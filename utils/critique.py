@@ -15,7 +15,10 @@ def critique_keyphrase(train_set, keyphrase_train_set, item_keyphrase_train_set,
     affected_items = item_keyphrase_train_set[keyphrase_index].nonzero()[1]
 
     if critiquing_function == 'upper_bound':
-        return np.argsort(rating.flatten())[::-1], np.append(np.delete(np.argsort(rating.flatten())[::-1], affected_items), affected_items), affected_items
+        after_critique = rating.flatten()
+        after_critique[affected_items] = -999999
+        return np.argsort(rating.flatten())[::-1], np.argsort(after_critique)[::-1], affected_items
+        #return np.argsort(rating.flatten())[::-1], np.append(np.delete(np.argsort(rating.flatten())[::-1], affected_items), affected_items), affected_items
 
     if critiquing_function == 'energy_redistribution':
         # Redistribute keyphrase prediction score
