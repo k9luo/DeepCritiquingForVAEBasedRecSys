@@ -1,15 +1,13 @@
-from scipy.sparse import vstack, hstack
-from tensorflow.contrib.distributions import Bernoulli
+from scipy.sparse import vstack
 from tqdm import tqdm
-from utils.progress import WorkSplitter, inhour
-from utils.regularizers import Regularizer
+from utils.progress import WorkSplitter
+from utils.optimizers import Optimizer
 
 import numpy as np
-import re
 import tensorflow as tf
 
 
-class E_CDE_VAE(object):
+class CE_VAE(object):
 
     def __init__(self, observation_dim, keyphrase_dim, latent_dim, batch_size,
                  lamb_l2=0.01,
@@ -225,7 +223,6 @@ class E_CDE_VAE(object):
         return modified_rating, modified_keyphrases
 
     def train_model(self, rating_matrix, keyphrase_matrix, corruption, epoch=100, batches=None, **unused):
-        #TODO is pretrained batch needed for training?
         if batches is None:
             batches = self.get_batches(rating_matrix, self._batch_size)
             batches_keyphrase = self.get_batches(keyphrase_matrix, self._batch_size)
@@ -259,9 +256,9 @@ class E_CDE_VAE(object):
         return batches
 
 
-def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0)),
-              epoch=100, lamb_l2=80.0, lamb_keyphrase=1.0, lamb_latent=5.0, lamb_rating=1.0,
-              beta=0.2, learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
+def ce_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0)),
+           epoch=100, lamb_l2=80.0, lamb_keyphrase=1.0, lamb_latent=5.0, lamb_rating=1.0,
+           beta=0.2, learning_rate=0.0001, rank=200, corruption=0.5, optimizer="RMSProp", seed=1, **unused):
     progress = WorkSplitter()
     matrix_input = matrix_train
     if embeded_matrix.shape[0] > 0:
@@ -269,10 +266,10 @@ def e_cde_vae(matrix_train, matrix_train_keyphrase, embeded_matrix=np.empty((0))
 
     matrix_input_keyphrase = matrix_train_keyphrase
 
-    model = E_CDE_VAE(observation_dim=matrix_input.shape[1], keyphrase_dim=matrix_input_keyphrase.shape[1],
-                      latent_dim=rank, batch_size=128, lamb_l2=lamb_l2, lamb_keyphrase=lamb_keyphrase,
-                      lamb_latent=lamb_latent, lamb_rating=lamb_rating, beta=beta, learning_rate=learning_rate,
-                      observation_distribution="Gaussian", optimizer=Regularizer[optimizer])
+    model = CE_VAE(observation_dim=matrix_input.shape[1], keyphrase_dim=matrix_input_keyphrase.shape[1],
+                   latent_dim=rank, batch_size=128, lamb_l2=lamb_l2, lamb_keyphrase=lamb_keyphrase,
+                   lamb_latent=lamb_latent, lamb_rating=lamb_rating, beta=beta, learning_rate=learning_rate,
+                   observation_distribution="Gaussian", optimizer=Optimizer[optimizer])
 
     model.train_model(matrix_input, matrix_input_keyphrase, corruption, epoch)
 
