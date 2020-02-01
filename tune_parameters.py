@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--data_dir', dest='data_dir', default="data/beer/")
     parser.add_argument('--parameters', dest='parameters', default='config/default.yml')
-    parser.add_argument('--save_path', dest='save_path', default="cdevae_tuning.csv")
+    parser.add_argument('--save_path', dest='save_path', default="cevae_tuning.csv")
     parser.add_argument('--train', dest='train_set', default="Rtrain.npz")
     parser.add_argument('--train_keyphrase', dest='train_keyphrase_set', default="Rtrain_keyphrase.npz",
                         help='Train keyphrase sparse matrix. (default: %(default)s)')
