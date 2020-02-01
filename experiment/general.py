@@ -75,7 +75,6 @@ def general(train, test, keyphrase_train, keyphrase_test, params, save_path, fin
                                  topK=row['topK'][-1],
                                  matrix_Train=train)
 
-
             result = evaluate(prediction, test, row['metric'], row['topK'])
 
         result_dict = {'model': algorithm,
