@@ -7,7 +7,7 @@ import pandas as pd
 import tensorflow as tf
 
 
-def critiquing(train_set, keyphrase_train_set, item_keyphrase_train_set, params, num_users_sampled, load_path, save_path):
+def critiquing(train_set, keyphrase_train_set, item_keyphrase_train_set, params, num_users_sampled, load_path, save_path, critiquing_function):
     progress = WorkSplitter()
     table_path = load_yaml('config/global.yml', key='path')['tables']
     df = pd.read_csv(table_path + load_path)
@@ -52,7 +52,19 @@ def critiquing(train_set, keyphrase_train_set, item_keyphrase_train_set, params,
                                              matrix_train_keyphrase=keyphrase_train_set)
 
         num_users, num_items = train_set.shape
-        df_fmap = critiquing_evaluation(train_set, keyphrase_train_set, item_keyphrase_train_set, model, algorithm, num_users, num_items, num_users_sampled, topk=[5, 10, 20])
+        df_fmap = critiquing_evaluation(train_set, keyphrase_train_set, item_keyphrase_train_set, model, algorithm, num_users, num_items, num_users_sampled, critiquing_function, topk=[5, 10, 20])
+
+        df_fmap['model'] = algorithm
+        df_fmap['rank'] = rank
+        df_fmap['beta'] = beta
+        df_fmap['lambda_l2'] = lamb_l2
+        df_fmap['lambda_keyphrase'] = lamb_keyphrase
+        df_fmap['lambda_latent'] = lamb_latent
+        df_fmap['lambda_rating'] = lamb_rating
+        df_fmap['learning_rate'] = learning_rate
+        df_fmap['epoch'] = epoch
+        df_fmap['corruption'] = corruption
+        df_fmap['optimizer'] = optimizer
 
         dfs_fmap.append(df_fmap)
 

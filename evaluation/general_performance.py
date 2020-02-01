@@ -135,6 +135,50 @@ def evaluate(matrix_Predict, matrix_Test, metric_names, atK, analytical=False):
     return output
 
 
+def evaluate_explanation(matrix_Predict, matrix_Test, metric_names, atK, analytical=False):
+    global_metrics = {
+        # "R-Precision": r_precision,
+        "NDCG": ndcg,
+        "Precision": precisionk,
+        "Recall": recallk,
+        "MAP": average_precisionk
+    }
+
+    output = dict()
+
+    num_users = matrix_Predict.shape[0]
+
+    for k in atK:
+        global_metric_names = list(set(metric_names).intersection(global_metrics.keys()))
+        results = {name: [] for name in global_metric_names}
+        topK_Predict = matrix_Predict[:, :k]
+
+        for user_index in tqdm(range(topK_Predict.shape[0])):
+            vector_predict = topK_Predict[user_index]
+            if len(vector_predict.nonzero()[0]) > 0:
+                vector_true = matrix_Test[user_index]
+                vector_true_dense = vector_true.nonzero()[1]
+                hits = np.isin(vector_predict, vector_true_dense)
+
+                if vector_true_dense.size > 0:
+                    for name in global_metric_names:
+                        results[name].append(global_metrics[name](vector_true_dense=vector_true_dense,
+                                                                  vector_predict=vector_predict,
+                                                                  hits=hits))
+
+        results_summary = dict()
+        if analytical:
+            for name in global_metric_names:
+                results_summary['{0}@{1}'.format(name, k)] = results[name]
+        else:
+            for name in global_metric_names:
+                results_summary['{0}@{1}'.format(name, k)] = (np.average(results[name]),
+                                                              1.96*np.std(results[name])/np.sqrt(num_users))
+        output.update(results_summary)
+
+    return output
+
+
 def evaluate_item_latent_reconstruction(matrix_Predict, num_items, atK):
     matrix_Test = np.identity(num_items)
 

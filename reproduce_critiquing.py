@@ -36,13 +36,15 @@ def main(args):
                params,
                args.num_users_sampled,
                load_path=args.load_path,
-               save_path=args.save_path)
+               save_path=args.save_path,
+               critiquing_function=args.critiquing_function)
 
 
 if __name__ == "__main__":
     # Commandline arguments
     parser = argparse.ArgumentParser(description="Reproduce Critiquing Performance")
 
+    parser.add_argument('--critiquing_function', dest='critiquing_function', default="energy_redistribution")
     parser.add_argument('--data_dir', dest='data_dir', default="data/beer/")
     parser.add_argument('--load_path', dest='load_path', default="critiquing_hyperparameters/beer/hyper_parameters.csv")
 #    parser.add_argument('--model_saved_path', dest='model_saved_path', default="beer")
