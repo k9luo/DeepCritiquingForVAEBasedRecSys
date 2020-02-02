@@ -1,5 +1,5 @@
 parameters:
-    models: CDE-VAE
+    models: CE-VAE
     epoch: [1, 2]
     lambda: [80.0]
     rank: [200]

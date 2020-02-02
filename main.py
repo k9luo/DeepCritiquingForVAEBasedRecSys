@@ -1,6 +1,7 @@
 from evaluation.general_performance import evaluate
 from prediction.predictor import predict
 from prediction.predictor import predict_keyphrase
+from scipy import sparse
 from utils.argcheck import check_float_positive, check_int_positive
 from utils.io import load_numpy
 from utils.modelnames import models
@@ -8,7 +9,6 @@ from utils.progress import inhour, WorkSplitter
 
 import argparse
 import numpy as np
-from scipy import sparse
 import tensorflow as tf
 import time
 
@@ -93,7 +93,10 @@ def main(args):
 
         if keyphrase_score is not None:
             keyphrase_prediction = predict_keyphrase(keyphrase_score, args.topk)
-            keyphrase_result = evaluate(keyphrase_prediction, sparse.csr_matrix(R_valid_keyphrase), metric_names, [args.topk])
+            keyphrase_result = evaluate(keyphrase_prediction,
+                                        sparse.csr_matrix(R_valid_keyphrase),
+                                        metric_names,
+                                        [args.topk])
 
             print("-")
             for metric in keyphrase_result.keys():
@@ -107,7 +110,7 @@ def main(args):
 
 if __name__ == "__main__":
     # Commandline arguments
-    parser = argparse.ArgumentParser(description="CDE-VAE")
+    parser = argparse.ArgumentParser(description="CE-VAE")
 
     parser.add_argument('--beta', dest='beta', default=0.2,
                         type=check_float_positive,
@@ -152,7 +155,7 @@ if __name__ == "__main__":
                         type=check_float_positive,
                         help='Learning rate used in training models. (default: %(default)s)')
 
-    parser.add_argument('--model', dest='model', default="CDE-VAE",
+    parser.add_argument('--model', dest='model', default="CE-VAE",
                         help='Model currently using. (default: %(default)s)')
 
     parser.add_argument('--optimizer', dest='optimizer', default="Adam",

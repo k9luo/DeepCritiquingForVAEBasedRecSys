@@ -1,4 +1,4 @@
-from scipy.sparse import save_npz, load_npz
+from scipy.sparse import load_npz
 
 import ast
 import os
