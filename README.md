@@ -22,11 +22,11 @@ Deep Critiquing for VAE-based Recommender Systems
 
 If you are interested in building up your research on this work, please cite:
 ```
-@inproceedings{wicrs20,
+@inproceedings{sigir20,
   author    = {Kai Luo and Hojin Yang and Ga Wu and Scott Sanner},
   title     = {Deep Critiquing for VAE-based Recommender Systems},
-  booktitle = {AAAI 2020 Workshop on Interactive and Conversational Recommendation Systems (WICRS)},
-  address   = {New York, NY},
+  booktitle = {Proceedings of the 43rd International {ACM} SIGIR Conference on Research and Development in Information Retrieval {(SIGIR-20)}},
+  address   = {Xi'an, China},
   year      = {2020}
 }
 ```
